@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Décision I5 (17/10/2026) : Cloudflare Workers + OpenNext, offre gratuite, adresse de test *.workers.dev.
+  "name": "usa-cars-formation",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": { "enabled": true },
+  // Variables non secrètes. Chaque déploiement remplace les variables « texte » du tableau de bord par
+  // celles-ci : elles doivent donc toutes être ici. Les clés (anon, service_role) sont saisies dans
+  // Cloudflare en type « Secret » (conservées d’un déploiement à l’autre), jamais ici.
+  "vars": {
+    "NEXT_PUBLIC_APP_ENV": "production",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://hzgkhtaefpbqztwagwph.supabase.co",
+    "APP_URL": "https://usa-cars.usacarsusasen.workers.dev",
+    "ADMIN_EMAIL": "abdou.ndiaye@icloud.com",
+    "NOTIFICATIONS_MODE": "simulated",
+  },
+  // Environnement de FORMATION (décision P6-2) : copie de l’application pointant vers un
+  // projet Supabase distinct (données fictives uniquement, jamais la production). Ne s’active
+  // qu’avec « --env formation » ; le déploiement de production (sans --env) n’est pas touché.
+  // NEXT_PUBLIC_APP_ENV reste « local » : l’URL Supabase n’est pas la production, et le garde-fou
+  // anti-production (lib/env.ts) reste ainsi actif pour cet environnement.
+  // Clés (anon, service_role) saisies en type « Secret » sur le worker usa-cars-formation.
+  "env": {
+    "formation": {
+      "name": "usa-cars-formation",
+      "vars": {
+        "NEXT_PUBLIC_APP_ENV": "local",
+        "NEXT_PUBLIC_SUPABASE_URL": "https://guhihvwkjefpafmskqsc.supabase.co",
+        "APP_URL": "https://usa-cars-formation.usacarsusasen.workers.dev",
+        "ADMIN_EMAIL": "abdou.ndiaye@icloud.com",
+        "NOTIFICATIONS_MODE": "simulated",
+      },
+    },
+  },
+}

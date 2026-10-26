@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fr">
+  <body style="font-family: Arial, sans-serif; color: #1b1d21; line-height: 1.5">
+    <h2 style="color: #12355b">USA CARS — votre accès</h2>
+    <p>Bonjour,</p>
+    <p>Un compte vient d’être créé pour vous dans l’application de gestion USA CARS.</p>
+    <p>Pour l’activer, choisissez votre mot de passe en cliquant sur le lien ci-dessous :</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/compte/mot-de-passe"
+        style="background: #12355b; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none"
+        >Activer mon compte</a
+      >
+    </p>
+    <p>Ce lien est personnel et à usage unique. Si vous n’attendiez pas ce message, ignorez-le.</p>
+    <p style="color: #5d636e; font-size: 12px">
+      USA CARS ne vous demandera jamais de mot de passe ni de coordonnées de paiement par e-mail ou par WhatsApp.
+    </p>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "pizzip": "npm:pizzip@3.3.0"
+  }
+}

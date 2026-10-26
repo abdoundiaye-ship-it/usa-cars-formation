@@ -1,0 +1,77 @@
+{
+  "name": "usa-cars-formation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "USA CARS — système de gestion et de tracking des dossiers véhicules USA → Dakar",
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "tsx scripts/guard-local-db.ts && playwright test",
+    "test:db": "tsx scripts/guard-local-db.ts && supabase test db",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:env": "tsx scripts/write-local-env.ts",
+    "db:reset": "tsx scripts/guard-local-db.ts && supabase db reset --local",
+    "admin:create": "tsx scripts/create-admin.ts",
+    "settings:generate": "tsx scripts/generate-settings-migration.ts",
+    "templates:generate": "tsx scripts/prepare-document-templates.ts",
+    "db:types": "supabase gen types typescript --local --schema public > supabase/.temp/database.generated.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.61.0",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.12",
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.0",
+    "docxtemplater": "^3.71.1",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "16.4.2",
+    "pizzip": "^3.3.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.7.0",
+    "supabase": "^2.121.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5",
+    "wrangler": "4.151.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "supabase",
+      "sharp",
+      "unrs-resolver",
+      "workerd"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+pnpm-lock.yaml
+.next/
+coverage/
+playwright-report/
+test-results/
+reference/
+docs/
+specs/
+CLAUDE.md
+KICKOFF_PROMPT.md
+lib/supabase/database.types.ts
+supabase/.temp/
+README.md
+AGENTS.md
+.open-next/
+.wrangler/

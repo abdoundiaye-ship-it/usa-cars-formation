@@ -1,0 +1,2 @@
+# Fins de ligne LF partout (Prettier les exige ; la CI tourne sous Linux).
+* text=auto eol=lf

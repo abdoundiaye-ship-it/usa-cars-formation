@@ -1,0 +1,802 @@
+<title>USA CARS Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: outil d'exploitation — barre latérale + espace de travail; bandeau "données fictives" en ruban de signalisation portuaire */
+:root{
+  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#E4EAEF; --fg:#13202C; --muted:#56687A; --line:#D2DBE3;
+  --accent:#1B4F8F; --accent-soft:#DCE7F4; --accent-fg:#FFFFFF;
+  --hazard:#F2C230; --hazard-ink:#1A1A12;
+  --ok:#1D7A4C; --ok-soft:#DDF1E6; --warn:#A35F00; --warn-soft:#FBEBD2; --bad:#B0281F; --bad-soft:#F8DEDB;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D141B; --surface:#15202B; --surface-2:#1C2935; --fg:#E4EBF1; --muted:#90A2B4; --line:#2A3947;
+  --accent:#78A9E8; --accent-soft:#1D3350; --accent-fg:#0D141B;
+  --hazard:#E3B524; --hazard-ink:#14140C;
+  --ok:#52C48C; --ok-soft:#17352A; --warn:#E6A645; --warn-soft:#3A2B12; --bad:#F2776C; --bad-soft:#3E1D1B;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#15202B; --surface-2:#1C2935; --fg:#E4EBF1; --muted:#90A2B4; --line:#2A3947;
+  --accent:#78A9E8; --accent-soft:#1D3350; --accent-fg:#0D141B;
+  --hazard:#E3B524; --hazard-ink:#14140C;
+  --ok:#52C48C; --ok-soft:#17352A; --warn:#E6A645; --warn-soft:#3A2B12; --bad:#F2776C; --bad-soft:#3E1D1B;
+  color-scheme:dark }
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.92em;letter-spacing:-.01em}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+/* ---- Bandeau données fictives ---- */
+.demo-strip{position:relative;z-index:30;display:flex;align-items:stretch;background:var(--hazard);color:var(--hazard-ink);font-size:12.5px;border-bottom:1px solid var(--hazard-ink)}
+.demo-strip .tape{flex:0 0 28px;background:repeating-linear-gradient(-45deg,var(--hazard-ink) 0 7px,var(--hazard) 7px 14px)}
+.demo-strip .txt{padding:6px 12px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;min-width:0}
+.demo-strip b{font-family:var(--f-display);font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ---- Structure ---- */
+.app{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:18px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto}
+.brand{display:flex;flex-direction:column;padding:0 8px}
+.brand .name{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.04em;line-height:1}
+.brand .sub{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{all:unset;cursor:pointer;padding:8px 10px;border-radius:var(--r);display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--fg)}
+.nav button:hover{background:var(--surface-2)}
+.nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav button:focus-visible{outline:2px solid var(--accent)}
+.nav .count{font-size:11px;font-variant-numeric:tabular-nums;background:var(--surface-2);color:var(--muted);padding:0 6px;border-radius:9px}
+.nav .count.alert{background:var(--bad-soft);color:var(--bad)}
+.side .foot{margin-top:auto;font-size:11.5px;color:var(--muted);padding:0 8px}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--surface)}
+.top h1{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.02em;margin:0;line-height:1.1;text-wrap:balance}
+.crumb{font-size:12px;color:var(--muted)}
+.crumb button{all:unset;cursor:pointer;color:var(--accent)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.controls label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+#view{padding:20px 24px 48px;display:flex;flex-direction:column;gap:18px;min-width:0}
+
+/* ---- Composants ---- */
+select,input[type=text],input[type=number],input[type=date],input[type=search],textarea{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 9px;min-width:0}
+textarea{width:100%;resize:vertical}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 12px;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+a.btn{text-decoration:none;color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{padding:3px 9px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel>header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel>header h2,.panel>header h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.03em;text-transform:uppercase}
+.panel .body{padding:14px 16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid-main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:18px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+tfoot td{font-weight:600;border-top:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:10px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.info{background:var(--accent-soft);color:var(--accent)}
+.chip.fake{background:var(--hazard);color:var(--hazard-ink);font-weight:600;letter-spacing:.05em;font-size:10px;text-transform:uppercase}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:0}
+.dl dt{color:var(--muted);font-size:12.5px}
+.dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.note{font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 10px}
+.note.warn{border-color:var(--warn)}
+
+/* Stepper étapes */
+.stepper{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:4px;overflow-x:auto;padding-bottom:2px}
+.step{border-top:4px solid var(--line);padding:6px 4px 0;font-size:12px;color:var(--muted)}
+.step b{display:block;font-weight:600;font-size:12.5px;color:var(--muted)}
+.step.done{border-color:var(--ok)} .step.done b{color:var(--fg)}
+.step.cur{border-color:var(--accent)} .step.cur b{color:var(--accent)}
+.step.cur span{color:var(--fg)}
+
+/* Chronologie */
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:92px 14px minmax(0,1fr);gap:8px;padding-bottom:12px;position:relative}
+.tl li::before{content:"";position:absolute;left:105px;top:14px;bottom:0;width:1px;background:var(--line)}
+.tl li:last-child::before{display:none}
+.tl .d{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:1px}
+.tl .m{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:6px;margin-left:2px}
+.tl .m.manual{background:var(--surface);border:2px solid var(--accent)}
+.tl .t{min-width:0}
+.tl .t small{display:block;color:var(--muted);font-size:11.5px}
+
+/* Barres */
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:10px;align-items:center;font-size:12.5px}
+.bar .track{height:12px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:3px}
+.bar .fill.bad{background:var(--bad)}
+.voyage{display:flex;flex-direction:column;gap:6px}
+.voyage .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);gap:8px}
+.voyage .track{height:6px;background:var(--surface-2);border-radius:3px;position:relative}
+.voyage .fill{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,var(--accent) 0 8px,transparent 8px 12px);border-radius:3px}
+
+.alert-list{list-style:none;margin:0;padding:0}
+.alert-list li{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.alert-list li:hover{background:var(--surface-2)}
+.alert-list li:last-child{border-bottom:0}
+.alert-list .sev{align-self:stretch;border-radius:2px;background:var(--warn)}
+.alert-list .sev.bad{background:var(--bad)} .alert-list .sev.info{background:var(--accent)}
+
+.req{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.req li{display:flex;gap:8px;align-items:baseline}
+.req .ic{font-weight:700;width:14px;flex:0 0 14px}
+.req .ok{color:var(--ok)} .req .ko{color:var(--bad)}
+
+/* Portail */
+.portal-card{display:flex;flex-direction:column;gap:14px}
+.vh{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline}
+.vh h3{margin:0;font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:.02em}
+.track-box{background:var(--surface-2);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+a.ext{color:var(--accent);font-weight:500}
+
+/* Modale & toast */
+#modal{position:fixed;inset:0;z-index:50;background:rgb(8 14 20 / .55);display:flex;align-items:flex-start;justify-content:center;padding:max(48px,env(safe-area-inset-top)) 16px 24px;overflow:auto}
+[hidden],#modal[hidden]{display:none!important}
+.dialog{background:var(--surface);border:1px solid var(--line);border-radius:8px;width:100%;max-width:560px;box-shadow:0 18px 50px rgb(0 0 0 / .25)}
+.dialog header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.dialog header h2{margin:0;font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:.02em}
+.dialog .body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.dialog footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.full{grid-column:1/-1}
+.f>span{font-size:12px;color:var(--muted)}
+.f input,.f select{width:100%}
+.check{display:flex;gap:8px;align-items:center}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:max-content;max-width:calc(100% - 32px)}
+#toast div{background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;box-shadow:0 6px 20px rgb(0 0 0 / .2)}
+@media (prefers-reduced-motion:no-preference){#toast div{animation:t .2s ease-out}@keyframes t{from{transform:translateY(6px);opacity:.3}}}
+
+/* Responsive */
+@media (max-width:1100px){.grid-main{grid-template-columns:minmax(0,1fr)} .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;flex-direction:column;gap:10px;padding:12px 16px;border-right:0;border-bottom:1px solid var(--line)}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  .nav button{white-space:nowrap}
+  .side .foot{display:none}
+  .top{padding:12px 16px}
+  #view{padding:16px 16px 40px}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .bar{grid-template-columns:96px minmax(0,1fr) 72px}
+  .fg{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+
+<div class="demo-strip" role="note">
+  <div class="tape" aria-hidden="true"></div>
+  <div class="txt"><b>Prototype · données fictives</b><span>Clients, véhicules, conteneurs, montants et messages sont inventés. Références <span class="mono">DEMO-</span> / <span class="mono">DEMU</span>, e-mails en <span class="mono">@exemple.test</span>. Aucun message n’est réellement envoyé.</span></div>
+</div>
+<div id="root"></div>
+<div id="modal" hidden></div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ================= Constantes ================= */
+const STAGES=[
+ {k:'ouverture',label:'Ouverture',statuses:['Nouveau','Informations à compléter','Validation requise']},
+ {k:'achat',label:'Achat',statuses:['Enchère en cours','Gagné','Paiement attendu','Confirmé','Annulé']},
+ {k:'usa',label:'Transport USA',statuses:['Enlèvement à planifier','Enlevé','En transit','Reçu au site/port']},
+ {k:'conteneur',label:'Conteneur',statuses:['Chargement planifié','Chargé','Conteneur confirmé','Documents attendus']},
+ {k:'maritime',label:'Maritime',statuses:['Réservation confirmée','Départ prévu','En transit','Transbordement','Arrivée estimée','Arrivé']},
+ {k:'dakar',label:'Dakar',statuses:['Documents à finaliser','Solde attendu','Documents remis','Dédouanement en cours','Enlevé']},
+ {k:'cloture',label:'Clôture',statuses:['Terminé','Archivé','Litige','Suspendu']},
+];
+const DOC_TYPES=['Devis','Contrat signé','Facture d’enchère','Titre de propriété','Photos véhicule','Preuve de paiement','Preuve de prise en charge','Bill of Lading','Facture USA CARS','Confirmation de dédouanement','Bon d’enlèvement'];
+const CLIENT_VISIBLE_DEFAULT={'Devis':1,'Contrat signé':1,'Facture d’enchère':1,'Photos véhicule':1,'Preuve de paiement':1,'Bill of Lading':1,'Facture USA CARS':1,'Confirmation de dédouanement':1,'Bon d’enlèvement':1};
+const COST_TYPES=['Prix d’adjudication (enchère)','Frais acheteur plateforme','Taxes et frais plateforme','Autres frais d’acquisition connus','Transport terrestre USA','Fret maritime (quote-part conteneur)','Frais de service USA CARS','Frais documentaires'];
+const ROLES={
+ admin:{label:'Administrateur',user:'Admin Démo',views:['dash','dossiers','conteneurs','finances','documents','notifications','rapports','audit','parametres'],ops:1,fin:1,force:1,seeFin:1},
+ ops:{label:'Agent opérations',user:'Awa Ba',views:['dash','dossiers','conteneurs','documents','notifications'],ops:1},
+ compta:{label:'Comptabilité',user:'Khady Faye',views:['dash','dossiers','finances','documents','rapports'],fin:1,seeFin:1},
+ direction:{label:'Direction',user:'Direction Démo',views:['dash','dossiers','conteneurs','rapports','audit'],seeFin:1},
+ client:{label:'Client',views:['portail']}
+};
+const VIEWS={dash:'Tableau de bord',dossiers:'Dossiers',conteneurs:'Conteneurs',finances:'Finances',documents:'Documents',notifications:'Notifications',rapports:'Rapports',audit:'Journal d’audit',parametres:'Paramètres',portail:'Mon espace client'};
+const COST_SHORT=['Enchère','Frais acheteur','Taxes','Autres acq.','Terrestre','Fret','Service','Docs'];
+const ACQ_LINES=4; // lignes 0-3 = coût d’acquisition (saisi)
+const SVC=6;       // ligne frais de service USA CARS
+const STORE_KEY='usacars-proto-v2';
+
+/* ================= Utilitaires ================= */
+const TODAY=new Date();TODAY.setHours(12,0,0,0);
+const d=n=>{const x=new Date(TODAY);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const todayISO=()=>d(0);
+const nowStamp=()=>{const x=new Date();return x.toISOString().slice(0,16).replace('T',' ')};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtD=iso=>{if(!iso)return '—';const x=new Date(iso.length>10?iso.replace(' ','T'):iso+'T12:00:00');return x.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})};
+const daysTo=iso=>Math.round((new Date(iso+'T12:00:00')-TODAY)/864e5);
+const nfUSD=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'USD',maximumFractionDigits:0});
+const nfXOF=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
+const nfRate=new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:4});
+const fxRate=()=>(S.data&&S.data.fx&&S.data.fx.rate)||0;
+const money=v=>S.cur==='XOF'&&fxRate()?nfXOF.format(Math.round(v*fxRate()))+' FCFA':nfUSD.format(v);
+const uid=p=>p+Math.random().toString(36).slice(2,8);
+
+/* ================= Données fictives ================= */
+function seed(){
+ const clients=[
+  {id:'C01',name:'Moussa Fall',phone:'+221 77 000 01 01',email:'moussa.fall@exemple.test',address:'Plateau, Dakar',status:'Actif',created:d(-210)},
+  {id:'C02',name:'Aminata Sow',phone:'+221 77 000 01 02',email:'aminata.sow@exemple.test',address:'Thiès',status:'Actif',created:d(-160)},
+  {id:'C03',name:'Garage Teranga Auto SARL',phone:'+221 33 000 01 03',email:'contact@teranga-auto.exemple.test',address:'Hann, Dakar',status:'Actif · professionnel',created:d(-400)},
+  {id:'C04',name:'Cheikh Diallo',phone:'+221 77 000 01 04',email:'cheikh.diallo@exemple.test',address:'Saint-Louis',status:'Actif',created:d(-180)},
+  {id:'C05',name:'Fatou Mbaye',phone:'+221 77 000 01 05',email:'fatou.mbaye@exemple.test',address:'Rufisque',status:'Actif',created:d(-40)},
+  {id:'C06',name:'Ousmane Gueye',phone:'+221 77 000 01 06',email:'ousmane.gueye@exemple.test',address:'Touba',status:'Pièces à compléter',created:d(-3)},
+ ];
+ const carriers=[
+  {id:'maersk',name:'Maersk',url:'https://www.maersk.com/tracking/',template:'https://www.maersk.com/tracking/{ref}',mode:'Lien officiel',api:'Non vérifiée — conditions à étudier sur developer.maersk.com'},
+  {id:'msc',name:'MSC',url:'https://www.msc.com/fr/track-a-shipment',template:'',mode:'Lien officiel (référence à saisir sur la page)',api:'Non étudiée'},
+  {id:'grimaldi',name:'Grimaldi',url:'https://trackingmcp.com/track/grimaldi',template:'',mode:'Lien de suivi tiers (TrackingMCP) — référence à saisir sur la page',api:'Non étudiée — lien non officiel, à confirmer'},
+ ];
+ const containers=[
+  {id:'DEMU4120017',carrier:'maersk',bl:'DEMO-BL-260931',vessel:'DEMO SAVANNAH',voyage:'DM642E',pol:'Savannah (USSAV)',pod:'Dakar (SNDKR)',ts:'Algeciras (ESALG) → DEMO ATLAS / DM705S',etd:d(-18),atd:d(-18),eta:d(6),ata:null,status:'En transit',lastCheck:d(-2),notes:'Retard annoncé au transbordement (fictif).',
+   etaHistory:[{date:d(-21),eta:d(3),source:'Saisie manuelle',by:'Awa Ba'},{date:d(-2),eta:d(6),source:'Saisie manuelle (site transporteur)',by:'Awa Ba'}],
+   events:[
+    {date:d(-21),loc:'Savannah (USSAV)',desc:'Conteneur vide retiré au dépôt',source:'Saisie manuelle'},
+    {date:d(-20),loc:'Savannah (USSAV)',desc:'Conteneur plein reçu au terminal',source:'Saisie manuelle'},
+    {date:d(-18),loc:'Savannah (USSAV)',desc:'Chargé à bord de DEMO SAVANNAH / DM642E',source:'Saisie manuelle'},
+    {date:d(-18),loc:'Savannah (USSAV)',desc:'Départ du navire',source:'Saisie manuelle'},
+    {date:d(-7),loc:'Algeciras (ESALG)',desc:'Déchargé pour transbordement',source:'Saisie manuelle'},
+    {date:d(-4),loc:'Algeciras (ESALG)',desc:'Chargé à bord de DEMO ATLAS / DM705S',source:'Saisie manuelle'},
+    {date:d(-2),loc:'—',desc:'ETA révisée : '+fmtD(d(3))+' → '+fmtD(d(6)),source:'Saisie manuelle'},
+   ]},
+  {id:'DEMU4120022',carrier:'msc',bl:'DEMO-BL-261044',vessel:'DEMO BALTIMORE',voyage:'DM651E',pol:'Baltimore (USBAL)',pod:'Dakar (SNDKR)',ts:'',etd:d(5),atd:null,eta:d(27),ata:null,status:'Chargement planifié',lastCheck:d(-3),notes:'',
+   etaHistory:[{date:d(-3),eta:d(27),source:'Saisie manuelle',by:'Mamadou Sarr'}],
+   events:[{date:d(-3),loc:'Baltimore (USBAL)',desc:'Réservation confirmée par le transporteur',source:'Saisie manuelle'}]},
+  {id:'DEMU3988105',carrier:'grimaldi',bl:'DEMO-BL-259870',vessel:'DEMO NEWARK',voyage:'DM618E',pol:'Newark (USEWR)',pod:'Dakar (SNDKR)',ts:'',etd:d(-34),atd:d(-34),eta:d(-4),ata:d(-3),status:'Arrivé',lastCheck:d(-3),notes:'Déchargé au terminal de Dakar (fictif).',
+   etaHistory:[{date:d(-37),eta:d(-5),source:'Saisie manuelle',by:'Awa Ba'},{date:d(-10),eta:d(-4),source:'Saisie manuelle',by:'Awa Ba'}],
+   events:[
+    {date:d(-36),loc:'Newark (USEWR)',desc:'Conteneur plein reçu au terminal',source:'Saisie manuelle'},
+    {date:d(-34),loc:'Newark (USEWR)',desc:'Départ du navire DEMO NEWARK / DM618E',source:'Saisie manuelle'},
+    {date:d(-3),loc:'Dakar (SNDKR)',desc:'Arrivée du navire (ATA)',source:'Saisie manuelle'},
+    {date:d(-3),loc:'Dakar (SNDKR)',desc:'Conteneur déchargé',source:'Saisie manuelle'},
+   ]},
+ ];
+ const deltas=[0,0,12,0,-35,40,0,0];
+ const costs=(a,nReal,other=0)=>{const n=nReal>=3?nReal+1:nReal;return [a[0],a[1],a[2],other,a[3],a[4],500,75].map((est,i)=>({t:COST_TYPES[i],est,real:i<n?est+deltas[i]:null,history:[]}))};
+ const pays=list=>list.map(([amount,off,mode,ref])=>({id:uid('P'),amount,date:d(off),mode,ref,validator:'Khady Faye',proof:'preuve_'+ref.toLowerCase()+'.pdf'}));
+ const autoDocs=(stage,extra=[])=>{const t=[];if(stage>=0)t.push('Devis');if(stage>=1)t.push('Contrat signé');if(stage>=2)t.push('Facture d’enchère','Photos véhicule','Titre de propriété');if(stage>=3)t.push('Preuve de prise en charge');if(stage>=4)t.push('Bill of Lading');return t.concat(extra).map((type,i)=>({id:uid('D'),type,name:type.toLowerCase().replace(/[^a-z0-9]+/g,'_')+'.pdf',version:1,date:d(-60+i*4),client:!!CLIENT_VISIBLE_DEFAULT[type]}))};
+ const V=(make,model,year,vin,lot,platform,cond,color)=>({make,model,year,vin,lot,platform,cond,color});
+ const dossiers=[
+  {id:'DEMO-2026-0131',client:'C01',v:V('Toyota','Camry SE',2021,'DEMOVIN2026A00131','DEMO-L-47182203','COPART','Choc avant léger, roulant','Gris'),stage:5,status:'Solde attendu',owner:'Awa Ba',created:d(-62),purchased:d(-55),updated:d(-1),container:'DEMU3988105',due:d(-1),
+   costs:costs([9800,1050,180,650,1350],7,85),pays:pays([[7000,-54,'Virement','VIR-0131-A'],[4000,-30,'Wave','WAV-0131-B']]),docs:autoDocs(4,['Facture USA CARS'])},
+  {id:'DEMO-2026-0134',client:'C03',v:V('Ford','F-150 XLT',2019,'DEMOVIN2026A00134','DEMO-L-38820117','IAA','Dégâts latéraux, roulant','Blanc'),stage:5,status:'Dédouanement en cours',owner:'Mamadou Sarr',created:d(-58),purchased:d(-52),updated:d(-2),container:'DEMU3988105',due:d(-2),
+   costs:costs([14200,1290,210,720,1600],7),pays:pays([[10000,-50,'Virement','VIR-0134-A'],[8612,-6,'Virement','VIR-0134-B']]),docs:autoDocs(4,['Facture USA CARS'])},
+  {id:'DEMO-2026-0135',client:'C03',v:V('Honda','Accord Sport',2020,'DEMOVIN2026A00135','DEMO-L-47190544','COPART','Grêle, roulant','Noir'),stage:5,status:'Documents remis',owner:'Mamadou Sarr',created:d(-57),purchased:d(-51),updated:d(-2),container:'DEMU3988105',due:d(-2),
+   costs:costs([8600,980,160,610,1350],7),pays:pays([[6000,-49,'Virement','VIR-0135-A'],[6292,-5,'Orange Money','OM-0135-B']]),docs:autoDocs(4,['Facture USA CARS'])},
+  {id:'DEMO-2026-0138',client:'C02',v:V('Lexus','RX 350',2018,'DEMOVIN2026A00138','DEMO-L-47255810','COPART','Arrière enfoncé, démarre','Bleu'),stage:4,status:'En transit',owner:'Awa Ba',created:d(-45),purchased:d(-40),updated:d(-2),container:'DEMU4120017',due:d(10),
+   costs:costs([11500,1180,190,840,1500],5),pays:pays([[9000,-40,'Virement','VIR-0138-A'],[3000,-20,'Wave','WAV-0138-B']]),docs:autoDocs(4)},
+  {id:'DEMO-2026-0139',client:'C04',v:V('Hyundai','Santa Fe',2020,'DEMOVIN2026A00139','DEMO-L-38877402','IAA','Inondation déclarée','Rouge'),stage:4,status:'En transit',owner:'Awa Ba',created:d(-44),purchased:d(-39),updated:d(-2),container:'DEMU4120017',due:d(12),
+   costs:costs([10400,1100,175,780,1500],5),pays:pays([[8000,-38,'Virement','VIR-0139-A'],[2500,-12,'Espèces','CAI-0139-B']]),docs:autoDocs(4)},
+  {id:'DEMO-2026-0140',client:'C01',v:V('Toyota','Highlander XLE',2019,'DEMOVIN2026A00140','DEMO-L-47261139','COPART','Choc avant, airbags déployés','Argent'),stage:4,status:'En transit',owner:'Awa Ba',created:d(-43),purchased:d(-38),updated:d(-2),container:'DEMU4120017',due:d(12),
+   costs:costs([13900,1260,205,760,1500],5),pays:pays([[15000,-37,'Virement','VIR-0140-A']]),docs:autoDocs(4)},
+  {id:'DEMO-2026-0142',client:'C05',v:V('Kia','Sorento LX',2021,'DEMOVIN2026A00142','DEMO-L-47310076','COPART','Rayures, roulant','Blanc'),stage:3,status:'Chargement planifié',owner:'Mamadou Sarr',created:d(-24),purchased:d(-18),updated:d(-3),container:'DEMU4120022',due:d(30),
+   costs:[],pays:pays([[13700,-16,'Virement','VIR-0142-A']]),docs:autoDocs(3)},
+  {id:'DEMO-2026-0143',client:'C03',v:V('Toyota','RAV4 XLE',2020,'DEMOVIN2026A00143','DEMO-L-38902215','IAA','Moteur à vérifier','Vert'),stage:2,status:'En transit',owner:'Mamadou Sarr',created:d(-20),purchased:d(-15),updated:d(-9),container:null,due:d(25),
+   costs:costs([15100,1330,220,880,1500],3),pays:pays([[16700,-14,'Virement','VIR-0143-A']]),docs:autoDocs(2)},
+  {id:'DEMO-2026-0145',client:'C02',v:V('Nissan','Rogue SV',2022,'DEMOVIN2026A00145','DEMO-L-47388420','COPART','Choc arrière léger','Gris'),stage:1,status:'Paiement attendu',owner:'Awa Ba',created:d(-6),purchased:d(-2),updated:d(-2),container:null,due:d(2),
+   costs:costs([13400,1240,200,700,1500],1,120),pays:pays([[1500,-5,'Wave','WAV-0145-A']]),docs:autoDocs(1)},
+  {id:'DEMO-2026-0146',client:'C06',v:V('Mercedes-Benz','GLE 350',2017,'','DEMO-L-38955061','IAA','À préciser par le client','Noir'),stage:0,status:'Informations à compléter',owner:'Awa Ba',created:d(-3),purchased:null,updated:d(-3),container:null,due:null,
+   costs:costs([16500,1400,230,900,1500],0),pays:[],docs:[]},
+  {id:'DEMO-2026-0127',client:'C04',v:V('Honda','CR-V EX',2018,'DEMOVIN2026A00127','DEMO-L-47011958','COPART','Choc avant léger','Blanc'),stage:6,status:'Terminé',owner:'Mamadou Sarr',created:d(-102),purchased:d(-95),updated:d(-25),container:null,containerNote:'DEMU3870044 (voyage archivé)',arrived:d(-40),due:d(-38),
+   costs:costs([9200,1020,170,640,1350],7),pays:pays([[7000,-94,'Virement','VIR-0127-A'],[5972,-39,'Virement','VIR-0127-B']]),docs:autoDocs(4,['Facture USA CARS','Confirmation de dédouanement','Bon d’enlèvement'])},
+ ];
+ // Kia : fret maritime pas encore facturé → estimation
+ dossiers.find(x=>x.id==='DEMO-2026-0142').costs=costs([12300,1210,195,690,1450],4);
+ dossiers.forEach(x=>{x.notes=x.notes||[];x.timeline=buildTimeline(x)});
+ dossiers.find(x=>x.id==='DEMO-2026-0143').notes.push({date:d(-9),by:'Mamadou Sarr',text:'Transporteur terrestre injoignable depuis 2 jours (fictif). Relancer.'});
+ dossiers.find(x=>x.id==='DEMO-2026-0146').notes.push({date:d(-3),by:'Awa Ba',text:'VIN et photos demandés au client (fictif).'});
+ const notifs=[
+  {id:uid('N'),date:d(-18),dossier:'DEMO-2026-0138',client:'C02',channel:'E-mail',template:'Départ du navire',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-18),dossier:'DEMO-2026-0139',client:'C04',channel:'E-mail',template:'Départ du navire',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-18),dossier:'DEMO-2026-0140',client:'C01',channel:'E-mail',template:'Départ du navire',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-4),dossier:'DEMO-2026-0131',client:'C01',channel:'E-mail',template:'Rappel d’échéance (J-3)',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-3),dossier:'DEMO-2026-0131',client:'C01',channel:'WhatsApp',template:'Arrivée à Dakar',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-3),dossier:'DEMO-2026-0134',client:'C03',channel:'E-mail',template:'Arrivée à Dakar',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-2),dossier:'DEMO-2026-0139',client:'C04',channel:'WhatsApp',template:'Changement d’ETA',status:'Échec',error:'Numéro non joignable (simulé)',attempts:2},
+  {id:uid('N'),date:d(-2),dossier:'DEMO-2026-0138',client:'C02',channel:'E-mail',template:'Changement d’ETA',status:'Envoyée',error:'',attempts:1},
+  {id:uid('N'),date:d(-1),dossier:'DEMO-2026-0131',client:'C01',channel:'E-mail',template:'Échéance dépassée',status:'Échec',error:'Adresse rejetée par le serveur (simulé)',attempts:1},
+ ];
+ const audit=[
+  [d(-6)+' 09:14','Khady Faye','Comptabilité','Paiement enregistré','DEMO-2026-0134','8 612 $ · Virement · VIR-0134-B'],
+  [d(-5)+' 16:02','Khady Faye','Comptabilité','Paiement enregistré','DEMO-2026-0135','6 292 $ · Orange Money · OM-0135-B'],
+  [d(-3)+' 10:20','Awa Ba','Agent opérations','Dossier créé','DEMO-2026-0146','Client C06 · Mercedes-Benz GLE 350'],
+  [d(-3)+' 11:45','Awa Ba','Agent opérations','Arrivée réelle saisie','DEMU3988105','ATA '+d(-3)+' · source : saisie manuelle'],
+  [d(-3)+' 11:47','Awa Ba','Agent opérations','Étape modifiée','DEMO-2026-0131','Maritime → Dakar'],
+  [d(-2)+' 08:31','Awa Ba','Agent opérations','ETA modifiée','DEMU4120017',d(3)+' → '+d(6)],
+  [d(-2)+' 15:10','Mamadou Sarr','Agent opérations','Statut modifié','DEMO-2026-0134','Documents remis → Dédouanement en cours'],
+  [d(-1)+' 07:00','Système','Tâche planifiée','Rappel d’échéance déclenché','DEMO-2026-0131','E-mail · échec (simulé)'],
+ ].map(([ts,user,role,action,obj,details])=>({ts,user,role,action,obj,details}));
+ const users=[
+  {name:'Admin Démo',role:'Administrateur',email:'admin@usacars.exemple.test',mfa:'Activée'},
+  {name:'Awa Ba',role:'Agent opérations',email:'awa.ba@usacars.exemple.test',mfa:'Activée'},
+  {name:'Mamadou Sarr',role:'Agent opérations',email:'mamadou.sarr@usacars.exemple.test',mfa:'Activée'},
+  {name:'Khady Faye',role:'Comptabilité',email:'khady.faye@usacars.exemple.test',mfa:'Activée'},
+  {name:'Direction Démo',role:'Direction',email:'direction@usacars.exemple.test',mfa:'À configurer'},
+ ];
+ const fx={rate:586.52,date:'2026-10-13 10:10 UTC',source:'XE.com — taux moyen du marché',by:'Admin Démo',history:[{rate:586.52,date:'2026-10-13 10:10 UTC',by:'Admin Démo'}]};
+ return {clients,carriers,containers,dossiers,notifs,audit,users,fx,seq:147};
+}
+function buildTimeline(x){
+ const t=[{date:x.created,text:'Dossier ouvert',by:x.owner}];
+ if(x.stage>=1)t.push({date:d(daysTo(x.created)+2),text:'Devis émis et contrat signé',by:x.owner});
+ if(x.purchased)t.push({date:x.purchased,text:'Véhicule adjugé sur '+x.v.platform+' · lot '+x.v.lot,by:x.owner});
+ if(x.stage>=2)t.push({date:d(daysTo(x.purchased)+3),text:'Enlèvement planifié — transporteur terrestre (fictif)',by:x.owner});
+ if(x.stage>=3)t.push({date:d(daysTo(x.purchased)+8),text:'Reçu au site de consolidation',by:x.owner});
+ if(x.stage>=4)t.push({date:d(daysTo(x.purchased)+12),text:'Chargé dans le conteneur '+(x.container||x.containerNote),by:x.owner});
+ if(x.stage>=5)t.push({date:x.arrived||d(-3),text:'Arrivée du navire à Dakar',by:x.owner});
+ if(x.stage>=6)t.push({date:x.updated,text:'Dossier clôturé',by:x.owner});
+ return t;
+}
+
+/* ================= État ================= */
+let S={role:'admin',clientView:'C01',view:'dash',sel:null,cur:'USD',q:'',stageF:'all',docF:'all',auditQ:'',finF:'due',data:null};
+function load(){try{const raw=localStorage.getItem(STORE_KEY);if(raw){const p=JSON.parse(raw);if(p&&p.data&&p.data.dossiers&&p.data.fx){Object.assign(S,p);if(!S.data.carriers.some(k=>k.id==='grimaldi'))S.data.carriers.push({id:'grimaldi',name:'Grimaldi',url:'https://trackingmcp.com/track/grimaldi',template:'',mode:'Lien de suivi tiers (TrackingMCP) — référence à saisir sur la page',api:'Non étudiée — lien non officiel, à confirmer'});return}}}catch(e){}S.data=seed()}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify({role:S.role,clientView:S.clientView,cur:S.cur,data:S.data}))}catch(e){}}
+const R=()=>ROLES[S.role];
+const me=()=>S.role==='client'?client(S.clientView).name+' (client)':R().user;
+const client=id=>S.data.clients.find(c=>c.id===id)||{name:'?'};
+const dossier=id=>S.data.dossiers.find(x=>x.id===id);
+const cont=id=>S.data.containers.find(c=>c.id===id);
+const carrier=id=>S.data.carriers.find(c=>c.id===id)||{name:id,template:''};
+const trackUrl=c=>{const k=carrier(c.carrier);return k.template?k.template.replace('{ref}',encodeURIComponent(c.id)):(k.url||'')};
+function totals(x){const cur=x.costs.reduce((s,c)=>s+(c.real??c.est),0);const est=x.costs.reduce((s,c)=>s+c.est,0);const paid=x.pays.reduce((s,p)=>s+p.amount,0);const acq=x.costs.slice(0,ACQ_LINES).reduce((s,c)=>s+(c.real??c.est),0);return{est,cur,paid,bal:Math.round((cur-paid)*100)/100,acq,allReal:x.costs.every(c=>c.real!=null)}}
+function log(action,obj,details){S.data.audit.unshift({ts:nowStamp(),user:me(),role:S.role==='client'?'Client':R().label,action,obj,details})}
+function touch(x,text){x.updated=todayISO();if(text)x.timeline.push({date:todayISO(),text,by:me()})}
+function notify(x,template,channel){S.data.notifs.unshift({id:uid('N'),date:todayISO(),dossier:x.id,client:x.client,channel:channel||'E-mail',template,status:'Simulée',error:'',attempts:1})}
+const isActive=x=>x.stage<6;
+const hasDoc=(x,t)=>x.docs.some(k=>k.type===t);
+
+/* ================= Règles de passage d'étape ================= */
+function requirements(x){
+ const n=x.stage+1;const t=totals(x);const c=x.container?cont(x.container):null;const r=[];
+ if(n===1){r.push(['VIN complet (17 caractères)',(x.v.vin||'').length===17],['Numéro de lot renseigné',!!x.v.lot],['Devis émis',hasDoc(x,'Devis')],['Contrat signé',hasDoc(x,'Contrat signé')])}
+ if(n===2){r.push(['Statut d’achat « Confirmé »',x.status==='Confirmé'],['Facture d’enchère archivée',hasDoc(x,'Facture d’enchère')],['Coût d’acquisition couvert par les paiements ('+money(t.acq)+')',t.paid>=t.acq])}
+ if(n===3){r.push(['Statut « Reçu au site/port »',x.status==='Reçu au site/port'],['Preuve de prise en charge archivée',hasDoc(x,'Preuve de prise en charge')])}
+ if(n===4){r.push(['Véhicule associé à un conteneur',!!c],['Bill of Lading et navire saisis',!!(c&&c.bl&&c.vessel)],['Lien de suivi officiel disponible',!!(c&&trackUrl(c))])}
+ if(n===5){r.push(['Arrivée réelle (ATA) du conteneur enregistrée',!!(c&&c.ata)])}
+ if(n===6){r.push(['Solde réglé',t.bal<=0],['Coûts réels saisis (plus d’estimations)',t.allReal],['Confirmation de dédouanement archivée',hasDoc(x,'Confirmation de dédouanement')],['Bon d’enlèvement archivé',hasDoc(x,'Bon d’enlèvement')])}
+ return r;
+}
+function advance(x,forcedReason){
+ const from=STAGES[x.stage].label;x.stage++;x.status=STAGES[x.stage].statuses[0];
+ if(x.stage===2&&!x.purchased)x.purchased=todayISO();
+ touch(x,'Étape : '+from+' → '+STAGES[x.stage].label+(forcedReason?' (validation administrateur)':''));
+ log(forcedReason?'Étape forcée (validation admin)':'Étape modifiée',x.id,from+' → '+STAGES[x.stage].label+(forcedReason?' · motif : '+forcedReason:''));
+ if(x.stage===4)notify(x,'Chargement confirmé — départ prévu');
+ if(x.stage===5)notify(x,'Arrivée à Dakar','WhatsApp');
+ if(x.stage===6)notify(x,'Dossier clôturé');
+ save();render();toast('Étape « '+STAGES[x.stage].label+' » atteinte'+(x.stage>=4?' · notification client simulée':''));
+}
+
+/* ================= Rendu ================= */
+const root=document.getElementById('root');
+function chipStage(x){const cls=x.stage===6?(x.status==='Terminé'||x.status==='Archivé'?'ok':'bad'):'info';return `<span class="chip ${cls}">${esc(STAGES[x.stage].label)} · ${esc(x.status)}</span>`}
+function chipBal(x){const t=totals(x);if(t.bal<=0)return '<span class="chip ok">Soldé</span>';if(x.due&&daysTo(x.due)<0)return `<span class="chip bad">${money(t.bal)} · échu</span>`;if(x.due&&daysTo(x.due)<=3)return `<span class="chip warn">${money(t.bal)}</span>`;return `<span class="num">${money(t.bal)}</span>`}
+const fake='<span class="chip fake" title="Donnée inventée pour la démonstration">fictif</span>';
+
+function alerts(){
+ const a=[];
+ S.data.dossiers.filter(isActive).forEach(x=>{
+  const t=totals(x);
+  if(x.due&&t.bal>0){const k=daysTo(x.due);if(k<0)a.push({sev:'bad',x,txt:`Échéance dépassée de ${-k} j · solde ${money(t.bal)}`});else if(k<=3)a.push({sev:'warn',x,txt:`Échéance dans ${k} j · solde ${money(t.bal)}`});}
+  const age=-daysTo(x.updated);if(age>7)a.push({sev:'warn',x,txt:`Aucune mise à jour depuis ${age} jours`});
+  if(x.status==='Informations à compléter')a.push({sev:'info',x,txt:'Informations à compléter avant validation'});
+ });
+ S.data.containers.forEach(c=>{if(!c.ata&&c.etaHistory.length>1&&-daysTo(c.etaHistory[c.etaHistory.length-1].date)<=7){const h=c.etaHistory;a.push({sev:'info',c,txt:`ETA modifiée : ${fmtD(h[h.length-2].eta)} → ${fmtD(h[h.length-1].eta)}`})}});
+ const o={bad:0,warn:1,info:2};return a.sort((p,q)=>o[p.sev]-o[q.sev]);
+}
+
+function render(){
+ const r=R();if(!r.views.includes(S.view)&&S.view!=='dossier'&&S.view!=='conteneur')S.view=r.views[0];
+ if(S.role==='client'&&S.view!=='portail')S.view='portail';
+ const nAlerts=S.role==='client'?0:alerts().filter(a=>a.sev==='bad').length;
+ const counts={dossiers:S.data.dossiers.filter(isActive).length,conteneurs:S.data.containers.filter(c=>!c.ata).length,notifications:S.data.notifs.filter(n=>n.status==='Échec').length};
+ const nav=r.views.map(v=>{const cur=(S.view===v)||(S.view==='dossier'&&v==='dossiers')||(S.view==='conteneur'&&v==='conteneurs');let badge='';
+   if(v==='dash'&&nAlerts)badge=`<span class="count alert">${nAlerts}</span>`;else if(v==='notifications'&&counts.notifications)badge=`<span class="count alert">${counts.notifications}</span>`;else if(counts[v]!=null)badge=`<span class="count">${counts[v]}</span>`;
+   return `<button data-act="go" data-v="${v}" ${cur?'aria-current="page"':''}><span>${VIEWS[v]}</span>${badge}</button>`}).join('');
+ let title=VIEWS[S.view]||'',crumb='';
+ if(S.view==='dossier'){const x=dossier(S.sel);title=x?x.v.year+' '+x.v.make+' '+x.v.model:'Dossier';crumb=`<div class="crumb"><button data-act="go" data-v="dossiers">Dossiers</button> / <span class="mono">${esc(S.sel)}</span></div>`}
+ if(S.view==='conteneur'){title='Conteneur '+S.sel;crumb=`<div class="crumb"><button data-act="go" data-v="conteneurs">Conteneurs</button> / <span class="mono">${esc(S.sel)}</span></div>`}
+ const roleOpts=Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${S.role===k?'selected':''}>${v.label}</option>`).join('');
+ const clientSel=S.role==='client'?`<select id="clientSel" data-chg="client" aria-label="Client simulé">${S.data.clients.map(c=>`<option value="${c.id}" ${S.clientView===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:'';
+ root.innerHTML=`<div class="app">
+  <aside class="side"><div class="brand"><span class="name">USA CARS</span><span class="sub">Gestion &amp; tracking · USA → Dakar</span></div>
+   <nav class="nav" aria-label="Navigation">${nav}</nav>
+   <div class="foot">Prototype V0 basé sur le cahier des charges v1.0 (oct. 2026). Les droits affichés ici sont simulés côté navigateur ; en production ils seront appliqués côté serveur et base de données.</div></aside>
+  <div class="main">
+   <div class="top"><div>${crumb}<h1>${esc(title)}</h1></div>
+    <div class="controls"><span class="chip fake" title="Toutes les données affichées sont inventées">Données fictives</span><label for="roleSel">Voir comme</label><select id="roleSel" data-chg="role">${roleOpts}</select>${clientSel}
+     <select id="curSel" data-chg="cur" aria-label="Devise d’affichage"><option value="USD" ${S.cur==='USD'?'selected':''}>USD</option><option value="XOF" ${S.cur==='XOF'?'selected':''}>FCFA · XE.com ${esc((S.data.fx.date||'').slice(0,10))}</option></select></div></div>
+   <main id="view">${VIEW_FN[S.view]()}</main>
+  </div></div>`;
+}
+
+/* ---------- Tableau de bord ---------- */
+function vDash(){
+ const act=S.data.dossiers.filter(isActive);const r=R();
+ const dues=act.reduce((s,x)=>s+Math.max(0,totals(x).bal),0);
+ const overdue=act.filter(x=>x.due&&daysTo(x.due)<0&&totals(x).bal>0);
+ const transit=S.data.containers.filter(c=>c.atd&&!c.ata);
+ const al=alerts();
+ const kp=`<div class="kpis">
+  <div class="kpi"><span class="l">Dossiers actifs</span><span class="v">${act.length}</span><span class="s">${S.data.dossiers.length-act.length} clôturé(s)</span></div>
+  <div class="kpi"><span class="l">Conteneurs en mer</span><span class="v">${transit.length}</span><span class="s">${S.data.containers.filter(c=>!c.atd).length} en préparation</span></div>
+  ${r.seeFin?`<div class="kpi ${dues?'warn':''}"><span class="l">Soldes dus</span><span class="v">${money(dues)}</span><span class="s">sur ${act.filter(x=>totals(x).bal>0).length} dossiers</span></div>`:`<div class="kpi"><span class="l">À compléter</span><span class="v">${act.filter(x=>x.stage===0).length}</span><span class="s">dossiers en ouverture</span></div>`}
+  <div class="kpi ${overdue.length?'bad':''}"><span class="l">Échéances dépassées</span><span class="v">${overdue.length}</span><span class="s">${al.filter(a=>a.txt.startsWith('Aucune')).length} dossier(s) sans mise à jour &gt; 7 j</span></div></div>`;
+ const alertHtml=al.length?`<ul class="alert-list">${al.map(a=>`<li data-act="${a.x?'open':'openC'}" data-id="${a.x?a.x.id:a.c.id}"><span class="sev ${a.sev}"></span><div><span class="mono">${esc(a.x?a.x.id:a.c.id)}</span> · ${a.x?esc(client(a.x.client).name)+' · '+esc(a.x.v.make+' '+a.x.v.model):'Conteneur '+esc(carrier(a.c.carrier).name)}<div class="muted">${a.txt}</div></div><span class="muted">›</span></li>`).join('')}</ul>`:'<div class="body empty">Rien à signaler.</div>';
+ const max=Math.max(...STAGES.map((s,i)=>S.data.dossiers.filter(x=>x.stage===i).length),1);
+ const pipe=`<div class="bars">${STAGES.map((s,i)=>{const n=S.data.dossiers.filter(x=>x.stage===i).length;return `<div class="bar"><span>${s.label}</span><div class="track"><div class="fill" style="width:${n/max*100}%"></div></div><span class="num">${n}</span></div>`}).join('')}</div>`;
+ const cards=S.data.containers.map(c=>contSummary(c,true)).join('');
+ return `${kp}
+ <div class="grid-main"><section class="panel"><header><h2>À traiter</h2><span class="muted">${al.length} alerte(s)</span></header>${alertHtml}</section>
+ <div class="stack"><section class="panel"><header><h2>Dossiers par étape</h2></header><div class="body">${pipe}</div></section></div></div>
+ <section class="panel"><header><h2>Conteneurs</h2><span class="note">Progression calculée entre la date de départ et l’ETA. Ce n’est pas une position GPS.</span></header><div class="body"><div class="grid2">${cards}</div></div></section>`;
+}
+function voyageBar(c){
+ if(!c.atd)return `<div class="voyage"><div class="ends"><span>${esc(c.pol)}</span><span>Départ prévu ${fmtD(c.etd)}</span></div><div class="track"></div></div>`;
+ const end=c.ata||c.eta;const tot=(new Date(end)-new Date(c.atd))||1;const p=c.ata?100:Math.max(0,Math.min(100,(TODAY-new Date(c.atd+'T12:00:00'))/tot*100));
+ return `<div class="voyage"><div class="ends"><span>${esc(c.pol)} · ${fmtD(c.atd)}</span><span>${esc(c.pod)} · ${c.ata?'arrivé '+fmtD(c.ata):'ETA '+fmtD(c.eta)}</span></div><div class="track"><div class="fill" style="width:${p}%"></div></div></div>`;
+}
+function contStatusChip(c){return c.ata?'<span class="chip ok">Arrivé</span>':c.atd?'<span class="chip info">'+esc(c.status)+'</span>':'<span class="chip">'+esc(c.status)+'</span>'}
+function contSummary(c,click){
+ const n=S.data.dossiers.filter(x=>x.container===c.id).length;
+ return `<div class="panel" ${click?`data-act="openC" data-id="${c.id}" style="cursor:pointer"`:''}><div class="body" style="display:flex;flex-direction:column;gap:10px">
+  <div class="row" style="justify-content:space-between"><span><b class="mono">${esc(c.id)}</b> <span class="muted">· ${esc(carrier(c.carrier).name)}</span></span>${contStatusChip(c)}</div>
+  <div class="muted">${esc(c.vessel)} / ${esc(c.voyage)} · ${n} véhicule(s)${c.ts?' · transbordement '+esc(c.ts.split(' ')[0]):''}</div>${voyageBar(c)}
+  ${!c.ata&&c.atd?'<span class="note">ETA indicative, à confirmer par l’arrivée réelle.</span>':''}</div></div>`;
+}
+
+/* ---------- Liste des dossiers ---------- */
+function vDossiers(){
+ const r=R();
+ return `<section class="panel"><header><div class="row"><input type="search" id="q" data-inp="q" placeholder="Référence, client, VIN, marque…" value="${esc(S.q)}" aria-label="Rechercher" style="width:260px;max-width:100%">
+  <select id="stageF" data-chg="stageF" aria-label="Filtrer par étape"><option value="all">Toutes les étapes</option><option value="active" ${S.stageF==='active'?'selected':''}>Actifs uniquement</option>${STAGES.map((s,i)=>`<option value="${i}" ${S.stageF==String(i)?'selected':''}>${s.label}</option>`).join('')}</select></div>
+  ${r.ops?'<button class="btn primary" data-act="newDossier">+ Nouveau dossier</button>':''}</header>
+  <div class="tbl-wrap" id="dlist">${dossierRows()}</div></section>`;
+}
+function dossierRows(){
+ const q=S.q.trim().toLowerCase();const r=R();
+ const list=S.data.dossiers.filter(x=>(S.stageF==='all'||(S.stageF==='active'?isActive(x):x.stage==S.stageF))&&(!q||[x.id,client(x.client).name,x.v.vin,x.v.make,x.v.model,x.v.lot,x.container||''].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.id.localeCompare(a.id));
+ if(!list.length)return '<div class="body empty">Aucun dossier ne correspond à cette recherche.</div>';
+ return `<table><thead><tr><th>Référence</th><th>Client</th><th>Véhicule</th><th>Étape · statut</th><th>Conteneur</th><th>Dernière MAJ</th><th>Responsable</th>${r.seeFin?'<th class="num">Solde</th>':''}</tr></thead><tbody>
+ ${list.map(x=>`<tr class="click" data-act="open" data-id="${x.id}"><td class="mono">${x.id}</td><td>${esc(client(x.client).name)}</td><td>${x.v.year} ${esc(x.v.make)} ${esc(x.v.model)}<div class="muted mono" style="font-size:11.5px">${esc(x.v.platform)} · ${esc(x.v.lot)}</div></td><td>${chipStage(x)}</td><td class="mono">${esc(x.container||x.containerNote||'—')}</td><td>${fmtD(x.updated)}${-daysTo(x.updated)>7&&isActive(x)?' <span class="chip warn">'+(-daysTo(x.updated))+' j</span>':''}</td><td>${esc(x.owner)}</td>${r.seeFin?`<td class="num">${chipBal(x)}</td>`:''}</tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- Fiche dossier / véhicule ---------- */
+function vDossier(){
+ const x=dossier(S.sel);if(!x)return '<div class="empty">Dossier introuvable.</div>';
+ const r=R();const t=totals(x);const c=x.container?cont(x.container):null;const cl=client(x.client);
+ const stepper=`<div class="stepper">${STAGES.map((s,i)=>`<div class="step ${i<x.stage?'done':i===x.stage?'cur':''}"><b>${s.label}</b><span>${i===x.stage?esc(x.status):i<x.stage?'Terminé':''}</span></div>`).join('')}</div>`;
+ const req=x.stage<6?requirements(x):[];
+ const reqHtml=x.stage<6?`<div><div class="muted" style="font-size:12px;margin-bottom:6px">Conditions pour passer à « ${STAGES[x.stage+1].label} »</div><ul class="req">${req.map(([l,ok])=>`<li><span class="ic ${ok?'ok':'ko'}">${ok?'✓':'✕'}</span><span>${esc(l)}</span></li>`).join('')}</ul></div>`:'';
+ const actions=r.ops?`<div class="row">
+   <label class="muted" for="stSel" style="font-size:12px">Statut</label><select id="stSel" data-chg="status" data-id="${x.id}">${STAGES[x.stage].statuses.map(s=>`<option ${s===x.status?'selected':''}>${esc(s)}</option>`).join('')}</select>
+   ${x.stage<6?`<button class="btn primary" data-act="advance" data-id="${x.id}">Passer à « ${STAGES[x.stage+1].label} »</button>`:''}
+   <button class="btn" data-act="addDoc" data-id="${x.id}">Ajouter un document</button>
+   <button class="btn" data-act="addNote" data-id="${x.id}">Ajouter une note</button>
+   ${x.stage===0?`<button class="btn" data-act="editVehicle" data-id="${x.id}">Compléter le véhicule</button>`:''}</div>`:'<div class="note">Lecture seule pour le rôle « '+r.label+' ».</div>';
+ const ident=`<dl class="dl"><dt>VIN</dt><dd class="mono">${x.v.vin?esc(x.v.vin):'<span class="chip bad">manquant</span>'}</dd><dt>Marque / modèle</dt><dd>${esc(x.v.make)} ${esc(x.v.model)} · ${x.v.year}</dd><dt>Plateforme · lot</dt><dd>${esc(x.v.platform)} · <span class="mono">${esc(x.v.lot)}</span></dd><dt>État déclaré</dt><dd>${esc(x.v.cond)}</dd><dt>Couleur</dt><dd>${esc(x.v.color)}</dd><dt>Date d’achat</dt><dd>${fmtD(x.purchased)}</dd><dt>Responsable</dt><dd>${esc(x.owner)}</dd></dl>`;
+ const clientBox=`<dl class="dl"><dt>Client</dt><dd>${esc(cl.name)} ${fake}</dd><dt>Téléphone</dt><dd class="mono">${esc(cl.phone)}</dd><dt>E-mail</dt><dd class="mono">${esc(cl.email)}</dd><dt>Adresse</dt><dd>${esc(cl.address)}</dd><dt>Statut</dt><dd>${esc(cl.status)}</dd></dl>`;
+ const tl=`<ul class="tl">${x.timeline.slice().reverse().map(e=>`<li><span class="d">${fmtD(e.date)}</span><span class="m"></span><span class="t">${esc(e.text)}<small>${esc(e.by)}</small></span></li>`).join('')}</ul>`;
+ const fin=r.seeFin?`<section class="panel"><header><h3>Coûts et paiements</h3>${r.fin?`<button class="btn small primary" data-act="addPay" data-id="${x.id}">Enregistrer un paiement</button>`:''}</header>
+  <div class="tbl-wrap"><table><thead><tr><th>Poste</th><th class="num">Estimé</th><th class="num">Réel</th>${r.fin?'<th></th>':''}</tr></thead><tbody>
+  ${x.costs.map((k,i)=>`<tr><td>${esc(k.t)}${k.history.length?`<div class="muted" style="font-size:11.5px">${k.history.length} ajustement(s) · dernier ${fmtD(k.history[k.history.length-1].date)}</div>`:''}</td><td class="num">${money(k.est)}</td><td class="num">${k.real==null?'<span class="chip">estimé</span>':money(k.real)}</td>${r.fin?`<td><button class="btn small" data-act="editCost" data-id="${x.id}" data-i="${i}">Modifier</button></td>`:''}</tr>`).join('')}
+  </tbody><tfoot><tr><td>Total ${t.allReal?'réel':'(réel + estimations)'}</td><td class="num">${money(t.est)}</td><td class="num">${money(t.cur)}</td>${r.fin?'<td></td>':''}</tr></tfoot></table></div>
+  <div class="body" style="border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px">
+   <div class="row" style="gap:18px"><span>Payé <b class="num">${money(t.paid)}</b></span><span>Reste dû <b class="num" style="color:${t.bal>0?'var(--bad)':'var(--ok)'}">${money(Math.max(0,t.bal))}</b></span><span class="muted">Échéance ${fmtD(x.due)}</span></div>
+   ${x.pays.length?`<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th>Validé par</th><th class="num">Montant</th></tr></thead><tbody>${x.pays.map(p=>`<tr><td>${fmtD(p.date)}</td><td>${esc(p.mode)}</td><td class="mono">${esc(p.ref)}</td><td>${esc(p.validator)}</td><td class="num">${money(p.amount)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Aucun paiement enregistré.</div>'}
+  </div></section>`:`<section class="panel"><header><h3>Coûts et paiements</h3></header><div class="body note">Réservé aux rôles Comptabilité, Direction et Administrateur.</div></section>`;
+ const contOpts=S.data.containers.filter(k=>!k.ata).map(k=>`<option value="${k.id}" ${x.container===k.id?'selected':''}>${k.id} · ${esc(k.vessel)} · départ ${fmtD(k.etd)}</option>`).join('');
+ const ship=`<section class="panel"><header><h3>Expédition maritime</h3>${r.ops&&x.stage>=2&&x.stage<=4?`<div class="row"><select id="assocSel" aria-label="Conteneur"><option value="">— Choisir un conteneur —</option>${contOpts}</select><button class="btn small" data-act="assoc" data-id="${x.id}">Associer</button></div>`:''}</header><div class="body">
+  ${c?`<div style="display:flex;flex-direction:column;gap:10px"><dl class="dl"><dt>Conteneur</dt><dd><button class="btn small" data-act="openC" data-id="${c.id}"><span class="mono">${c.id}</span></button></dd><dt>Transporteur</dt><dd>${esc(carrier(c.carrier).name)}</dd><dt>Bill of Lading</dt><dd class="mono">${esc(c.bl)}</dd><dt>Navire / voyage</dt><dd>${esc(c.vessel)} / ${esc(c.voyage)}</dd><dt>${c.ata?'Arrivée réelle':'ETA (indicative)'}</dt><dd>${fmtD(c.ata||c.eta)}</dd><dt>Dernière vérification</dt><dd>${fmtD(c.lastCheck)}</dd></dl>${voyageBar(c)}</div>`:`<div class="empty">${x.containerNote?'Ancien conteneur : '+esc(x.containerNote):'Pas encore associé à un conteneur.'}</div>`}</div></section>`;
+ const docs=`<section class="panel"><header><h3>Documents</h3><span class="muted">${x.docs.length}</span></header>${x.docs.length?`<div class="tbl-wrap"><table><tbody>${x.docs.map(k=>`<tr><td>${esc(k.type)}<div class="muted mono" style="font-size:11.5px">${esc(k.name)} · v${k.version}</div></td><td>${fmtD(k.date)}</td><td>${k.client?'<span class="chip info">Visible client</span>':'<span class="chip">Interne</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="body empty">Aucun document.</div>'}</section>`;
+ const notes=`<section class="panel"><header><h3>Notes internes</h3></header><div class="body">${x.notes.length?x.notes.map(n=>`<p style="margin:0 0 8px"><span class="muted" style="font-size:12px">${fmtD(n.date)} · ${esc(n.by)}</span><br>${esc(n.text)}</p>`).join(''):'<div class="empty">Aucune note.</div>'}</div></section>`;
+ const aud=S.data.audit.filter(a=>a.obj===x.id);
+ const audHtml=`<section class="panel"><header><h3>Journal d’audit du dossier</h3></header>${aud.length?`<div class="tbl-wrap"><table><tbody>${aud.map(a=>`<tr><td class="mono" style="white-space:nowrap">${esc(a.ts)}</td><td>${esc(a.user)}</td><td>${esc(a.action)}</td><td class="muted">${esc(a.details)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="body empty">Aucune modification journalisée.</div>'}</section>`;
+ return `<section class="panel"><div class="body" style="display:flex;flex-direction:column;gap:14px">
+   <div class="row" style="justify-content:space-between"><div class="row"><span class="mono" style="font-weight:500">${x.id}</span>${chipStage(x)}${fake}</div>${r.seeFin?chipBal(x):''}</div>
+   ${stepper}${reqHtml}${actions}</div></section>
+  <div class="grid-main"><div class="stack">
+   <section class="panel"><header><h3>Véhicule</h3></header><div class="body">${ident}</div></section>
+   <section class="panel"><header><h3>Chronologie</h3></header><div class="body">${tl}</div></section>
+   ${notes}</div>
+  <div class="stack">${fin}${ship}${docs}
+   <section class="panel"><header><h3>Client</h3></header><div class="body">${clientBox}</div></section></div></div>${audHtml}`;
+}
+
+/* ---------- Conteneurs ---------- */
+function vConteneurs(){
+ const r=R();
+ return `<div class="note">Version 1 du tracking : un agent saisit les références et les événements depuis le site officiel du transporteur. L’intégration API (phase 5) ne sera activée qu’après vérification des droits d’accès.</div>
+ <section class="panel"><header><h2>Conteneurs</h2>${r.ops?'<button class="btn primary" data-act="newCont">+ Nouveau conteneur</button>':''}</header>
+ <div class="tbl-wrap"><table><thead><tr><th>Conteneur</th><th>Transporteur</th><th>B/L</th><th>Navire / voyage</th><th>Trajet</th><th>Départ</th><th>ETA / ATA</th><th>Véhicules</th><th>Vérifié le</th><th>Statut</th></tr></thead><tbody>
+ ${S.data.containers.map(c=>`<tr class="click" data-act="openC" data-id="${c.id}"><td class="mono">${c.id}</td><td>${esc(carrier(c.carrier).name)}</td><td class="mono">${esc(c.bl)}</td><td>${esc(c.vessel)} / ${esc(c.voyage)}</td><td>${esc(c.pol)} → ${esc(c.pod)}</td><td>${fmtD(c.atd||c.etd)}${c.atd?'':' <span class="muted">(prévu)</span>'}</td><td>${c.ata?'<b>'+fmtD(c.ata)+'</b> <span class="muted">réelle</span>':fmtD(c.eta)+' <span class="muted">indicative</span>'}</td><td class="num">${S.data.dossiers.filter(x=>x.container===c.id).length}</td><td>${fmtD(c.lastCheck)}</td><td>${contStatusChip(c)}</td></tr>`).join('')}
+ </tbody></table></div></section>`;
+}
+function vConteneur(){
+ const c=cont(S.sel);if(!c)return '<div class="empty">Conteneur introuvable.</div>';const r=R();const url=trackUrl(c);
+ const vs=S.data.dossiers.filter(x=>x.container===c.id);
+ return `<section class="panel"><div class="body" style="display:flex;flex-direction:column;gap:14px">
+  <div class="row" style="justify-content:space-between"><div class="row"><b class="mono" style="font-size:16px">${c.id}</b>${contStatusChip(c)}${fake}</div>
+   <div class="row">${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Ouvrir le suivi ${esc(carrier(c.carrier).name)} ↗</a>`:''}
+   ${r.ops?`<button class="btn" data-act="checked" data-id="${c.id}">Marquer vérifié aujourd’hui</button>`:''}</div></div>
+  ${voyageBar(c)}
+  ${carrier(c.carrier).template?'':`<div class="note">Sur la page de suivi ${esc(carrier(c.carrier).name)}${c.carrier==='grimaldi'?' (service tiers TrackingMCP)':''}, saisir le n° de conteneur <b class="mono">${c.id}</b> ou le B/L <b class="mono">${esc(c.bl)}</b>.</div>`}
+  <div class="note warn">Les références sont fictives : la page du transporteur ne trouvera pas ce conteneur. ${c.ata?'':'L’ETA reste indicative jusqu’à l’enregistrement de l’arrivée réelle.'}</div>
+  ${r.ops?`<div class="row">${!c.ata?`<button class="btn primary" data-act="eta" data-id="${c.id}">Mettre à jour l’ETA</button>`:''}<button class="btn" data-act="addEvt" data-id="${c.id}">Ajouter un événement</button>${!c.atd?`<button class="btn" data-act="depart" data-id="${c.id}">Enregistrer le départ</button>`:''}${c.atd&&!c.ata?`<button class="btn" data-act="ata" data-id="${c.id}">Enregistrer l’arrivée réelle</button>`:''}<button class="btn" data-act="apiSim" data-id="${c.id}">Simuler une synchro API</button></div>`:''}
+ </div></section>
+ <div class="grid-main"><div class="stack">
+  <section class="panel"><header><h3>Événements transporteur</h3><span class="row"><span class="chip"><span class="dot" style="color:var(--accent)"></span>API</span><span class="chip">○ Saisie manuelle</span></span></header><div class="body"><ul class="tl">
+   ${c.events.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<li><span class="d">${fmtD(e.date)}</span><span class="m ${e.source.startsWith('API')?'':'manual'}"></span><span class="t">${esc(e.desc)}<small>${esc(e.loc)} · source : ${esc(e.source)}</small></span></li>`).join('')}</ul></div></section>
+  <section class="panel"><header><h3>Historique de l’ETA</h3></header><div class="tbl-wrap"><table><thead><tr><th>Saisi le</th><th>ETA</th><th>Source</th><th>Par</th></tr></thead><tbody>${c.etaHistory.slice().reverse().map(h=>`<tr><td>${fmtD(h.date)}</td><td><b>${fmtD(h.eta)}</b></td><td>${esc(h.source)}</td><td>${esc(h.by)}</td></tr>`).join('')}</tbody></table></div></section>
+ </div><div class="stack">
+  <section class="panel"><header><h3>Références</h3></header><div class="body"><dl class="dl"><dt>Transporteur</dt><dd>${esc(carrier(c.carrier).name)}</dd><dt>Bill of Lading</dt><dd class="mono">${esc(c.bl)}</dd><dt>Navire / voyage</dt><dd>${esc(c.vessel)} / ${esc(c.voyage)}</dd><dt>Port de chargement</dt><dd>${esc(c.pol)}</dd><dt>Transbordement</dt><dd>${esc(c.ts||'—')}</dd><dt>Port d’arrivée</dt><dd>${esc(c.pod)}</dd><dt>Départ</dt><dd>${c.atd?fmtD(c.atd)+' (réel)':fmtD(c.etd)+' (prévu)'}</dd><dt>ETA</dt><dd>${fmtD(c.eta)} <span class="muted">indicative</span></dd><dt>ATA</dt><dd>${c.ata?fmtD(c.ata):'—'}</dd><dt>Dernière vérification</dt><dd>${fmtD(c.lastCheck)}</dd><dt>Lien de suivi</dt><dd>${url?`<a class="ext mono" href="${esc(url)}" target="_blank" rel="noopener" style="font-size:12px">${esc(url)}</a>`:'Non configuré'}</dd><dt>Notes internes</dt><dd>${esc(c.notes||'—')}</dd></dl></div></section>
+  <section class="panel"><header><h3>Véhicules chargés</h3><span class="muted">${vs.length}</span></header>${vs.length?`<div class="tbl-wrap"><table><tbody>${vs.map(x=>`<tr class="click" data-act="open" data-id="${x.id}"><td class="mono">${x.id}</td><td>${x.v.year} ${esc(x.v.make)} ${esc(x.v.model)}</td><td>${esc(client(x.client).name)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="body empty">Aucun véhicule associé.</div>'}</section>
+ </div></div>`;
+}
+
+/* ---------- Finances ---------- */
+function vFinances(){
+ const r=R();const list=S.data.dossiers.filter(x=>S.finF==='all'||totals(x).bal>0);
+ const allPays=S.data.dossiers.flatMap(x=>x.pays.map(p=>({...p,x}))).sort((a,b)=>b.date.localeCompare(a.date));
+ const sum=f=>S.data.dossiers.reduce((s,x)=>s+f(totals(x)),0);
+ return `<div class="kpis"><div class="kpi"><span class="l">Montant total des dossiers</span><span class="v">${money(sum(t=>t.cur))}</span><span class="s">réel + estimations</span></div><div class="kpi"><span class="l">Encaissé</span><span class="v">${money(sum(t=>t.paid))}</span><span class="s">${allPays.length} paiements</span></div><div class="kpi warn"><span class="l">Reste dû</span><span class="v">${money(sum(t=>Math.max(0,t.bal)))}</span><span class="s">créances clients</span></div><div class="kpi"><span class="l">Coûts encore estimés</span><span class="v">${S.data.dossiers.reduce((s,x)=>s+x.costs.filter(c=>c.real==null).length,0)}</span><span class="s">lignes à confirmer</span></div></div>
+ <section class="panel"><header><h2>Soldes par dossier</h2><select id="finF" data-chg="finF" aria-label="Filtre"><option value="due" ${S.finF==='due'?'selected':''}>Avec solde dû</option><option value="all" ${S.finF==='all'?'selected':''}>Tous les dossiers</option></select></header>
+ <div class="tbl-wrap"><table><thead><tr><th>Dossier</th><th>Client</th><th class="num">Total</th><th class="num">Payé</th><th class="num">Solde</th><th>Échéance</th>${r.fin?'<th></th>':''}</tr></thead><tbody>
+ ${list.map(x=>{const t=totals(x);return `<tr><td class="mono"><button class="btn small" data-act="open" data-id="${x.id}">${x.id}</button></td><td>${esc(client(x.client).name)}</td><td class="num">${money(t.cur)}</td><td class="num">${money(t.paid)}</td><td class="num">${chipBal(x)}</td><td>${fmtD(x.due)}</td>${r.fin?`<td>${t.bal>0?`<button class="btn small" data-act="addPay" data-id="${x.id}">Paiement</button>`:''}</td>`:''}</tr>`}).join('')||'<tr><td colspan="7" class="empty">Aucun solde dû.</td></tr>'}
+ </tbody></table></div></section>
+ <section class="panel"><header><h2>Derniers paiements</h2></header><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Dossier</th><th>Client</th><th>Mode</th><th>Référence</th><th>Justificatif</th><th>Validé par</th><th class="num">Montant</th></tr></thead><tbody>
+ ${allPays.slice(0,12).map(p=>`<tr><td>${fmtD(p.date)}</td><td class="mono">${p.x.id}</td><td>${esc(client(p.x.client).name)}</td><td>${esc(p.mode)}</td><td class="mono">${esc(p.ref)}</td><td class="mono muted" style="font-size:12px">${esc(p.proof)}</td><td>${esc(p.validator)}</td><td class="num">${money(p.amount)}</td></tr>`).join('')}</tbody></table></div></section>
+ ${fxPanel()}<div class="note">Paiements en ligne hors périmètre du MVP : les paiements sont enregistrés avec leur justificatif. Montants de référence en USD ; l’affichage FCFA utilise le taux XE.com ci-dessus.</div>`;
+}
+
+/* ---------- Documents ---------- */
+function vDocuments(){
+ const r=R();const all=S.data.dossiers.flatMap(x=>x.docs.map(k=>({...k,x}))).filter(k=>S.docF==='all'||k.type===S.docF).sort((a,b)=>b.date.localeCompare(a.date));
+ return `<section class="panel"><header><select id="docF" data-chg="docF" aria-label="Type de document"><option value="all">Tous les types</option>${DOC_TYPES.map(t=>`<option ${S.docF===t?'selected':''}>${esc(t)}</option>`).join('')}</select><span class="muted">${all.length} document(s)</span></header>
+ <div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Fichier</th><th>Dossier</th><th>Client</th><th>Version</th><th>Date</th><th>Accès</th></tr></thead><tbody>
+ ${all.map(k=>`<tr><td>${esc(k.type)}</td><td class="mono" style="font-size:12px">${esc(k.name)}</td><td class="mono"><button class="btn small" data-act="open" data-id="${k.x.id}">${k.x.id}</button></td><td>${esc(client(k.x.client).name)}</td><td class="num">v${k.version}</td><td>${fmtD(k.date)}</td><td>${r.ops?`<button class="btn small" data-act="toggleDoc" data-id="${k.x.id}" data-d="${k.id}">${k.client?'Visible client':'Interne'}</button>`:(k.client?'<span class="chip info">Visible client</span>':'<span class="chip">Interne</span>')}</td></tr>`).join('')}
+ </tbody></table></div></section><div class="note">Stockage privé prévu avec liens signés temporaires. Dans ce prototype, seuls les noms de fichiers sont enregistrés.</div>`;
+}
+
+/* ---------- Notifications ---------- */
+function vNotifs(){
+ const r=R();
+ return `<section class="panel"><header><h2>Journal des notifications</h2>${r.ops?'<button class="btn primary" data-act="runReminders">Lancer les rappels d’échéance</button>':''}</header>
+ <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Dossier</th><th>Destinataire</th><th>Canal</th><th>Modèle</th><th>Statut</th><th>Tentatives</th><th></th></tr></thead><tbody>
+ ${S.data.notifs.map(n=>`<tr><td>${fmtD(n.date)}</td><td class="mono">${esc(n.dossier)}</td><td>${esc(client(n.client).name)}<div class="muted mono" style="font-size:11.5px">${esc(n.channel==='E-mail'?client(n.client).email:client(n.client).phone)}</div></td><td>${esc(n.channel)}</td><td>${esc(n.template)}</td><td>${n.status==='Échec'?`<span class="chip bad">Échec</span><div class="muted" style="font-size:11.5px">${esc(n.error)}</div>`:n.status==='Simulée'?'<span class="chip warn">Simulée · non envoyée</span>':'<span class="chip ok">Envoyée</span>'}</td><td class="num">${n.attempts}</td><td>${n.status==='Échec'&&r.ops?`<button class="btn small" data-act="resend" data-id="${n.id}">Renvoyer</button>`:''}</td></tr>`).join('')}
+ </tbody></table></div></section>
+ <div class="note">Canal principal : e-mail. WhatsApp/SMS en option selon le fournisseur retenu. Dans ce prototype, aucun message ne quitte la page.</div>`;
+}
+
+/* ---------- Rapports ---------- */
+function vRapports(){
+ const all=S.data.dossiers;const act=all.filter(isActive);
+ const delays=all.map(x=>{const c=x.container?cont(x.container):null;const arr=x.arrived||(c&&c.ata);return x.purchased&&arr?(new Date(arr)-new Date(x.purchased))/864e5:null}).filter(v=>v!=null);
+ const avgDelay=delays.length?Math.round(delays.reduce((a,b)=>a+b,0)/delays.length):0;
+ const avgCost=all.reduce((s,x)=>s+totals(x).cur,0)/all.length;
+ const service=all.reduce((s,x)=>s+(x.costs[SVC].real??x.costs[SVC].est),0);
+ const byClient=S.data.clients.map(c=>({c,bal:all.filter(x=>x.client===c.id).reduce((s,x)=>s+Math.max(0,totals(x).bal),0)})).filter(o=>o.bal>0).sort((a,b)=>b.bal-a.bal);
+ const mx=Math.max(...byClient.map(o=>o.bal),1);
+ const late=act.filter(x=>x.container&&cont(x.container).etaHistory.length>1&&!cont(x.container).ata);
+ return `<div class="kpis"><div class="kpi"><span class="l">Délai moyen achat → Dakar</span><span class="v">${avgDelay} j</span><span class="s">sur ${delays.length} dossiers arrivés</span></div><div class="kpi"><span class="l">Coût moyen par véhicule</span><span class="v">${money(avgCost)}</span><span class="s">tous frais inclus</span></div><div class="kpi"><span class="l">Frais de service USA CARS</span><span class="v">${money(service)}</span><span class="s">indicateur de rentabilité</span></div><div class="kpi ${late.length?'warn':''}"><span class="l">Dossiers avec ETA décalée</span><span class="v">${late.length}</span><span class="s">en cours de transit</span></div></div>
+ <div class="grid2"><section class="panel"><header><h2>Créances par client</h2></header><div class="body"><div class="bars">${byClient.map(o=>`<div class="bar"><span>${esc(o.c.name)}</span><div class="track"><div class="fill bad" style="width:${o.bal/mx*100}%"></div></div><span class="num">${money(o.bal)}</span></div>`).join('')||'<div class="empty">Aucune créance.</div>'}</div></div></section>
+ <section class="panel"><header><h2>Exports</h2></header><div class="body" style="display:flex;flex-direction:column;gap:10px">
+  <p style="margin:0" class="muted">Exports CSV (ouvrables dans Excel). Le contenu dépend des droits du rôle connecté.</p>
+  <div class="row"><button class="btn" data-act="csv" data-k="dossiers">Dossiers</button><button class="btn" data-act="csv" data-k="paiements">Paiements</button><button class="btn" data-act="csv" data-k="creances">Créances</button><button class="btn" data-act="csv" data-k="conteneurs">Conteneurs</button></div></div></section></div>
+ <section class="panel"><header><h2>Frais par véhicule</h2></header><div class="tbl-wrap"><table><thead><tr><th>Dossier</th><th>Véhicule</th>${COST_TYPES.map((t,i)=>`<th class="num" title="${esc(t)}">${esc(COST_SHORT[i])}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>
+ ${all.map(x=>`<tr><td class="mono">${x.id}</td><td>${esc(x.v.make)} ${esc(x.v.model)}</td>${x.costs.map(c=>`<td class="num">${money(c.real??c.est)}${c.real==null?'*':''}</td>`).join('')}<td class="num"><b>${money(totals(x).cur)}</b></td></tr>`).join('')}</tbody></table></div><div class="body note">* montant estimé, non encore confirmé.</div></section>`;
+}
+
+/* ---------- Audit ---------- */
+function vAudit(){
+ const q=S.auditQ.toLowerCase();const list=S.data.audit.filter(a=>!q||Object.values(a).join(' ').toLowerCase().includes(q));
+ return `<section class="panel"><header><input type="search" id="auditQ" data-inp="auditQ" placeholder="Filtrer : utilisateur, action, référence…" value="${esc(S.auditQ)}" aria-label="Filtrer le journal" style="width:300px;max-width:100%"><span class="muted">${list.length} entrée(s)</span></header>
+ <div class="tbl-wrap" id="auditList"><table><thead><tr><th>Horodatage</th><th>Utilisateur</th><th>Rôle</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead><tbody>
+ ${list.map(a=>`<tr><td class="mono" style="white-space:nowrap">${esc(a.ts)}</td><td>${esc(a.user)}</td><td>${esc(a.role)}</td><td>${esc(a.action)}</td><td class="mono">${esc(a.obj)}</td><td class="muted">${esc(a.details)}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
+/* ---------- Taux de change ---------- */
+const XE_URL='https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=XOF';
+function fxPanel(){const fx=S.data.fx;const r=R();
+ return `<section class="panel"><header><h2>Taux de change USD → FCFA</h2>${r.fin?'<button class="btn primary" data-act="fx">Mettre à jour le taux</button>':''}</header><div class="body" style="display:flex;flex-direction:column;gap:12px">
+  <div class="row" style="gap:20px;align-items:baseline"><span style="font-family:var(--f-display);font-size:28px;font-weight:700" class="num">1 USD = ${nfRate.format(fx.rate)} XOF</span><span class="muted">${esc(fx.source)} · relevé le ${esc(fx.date)} par ${esc(fx.by)}</span></div>
+  <div><a class="ext" href="${XE_URL}" target="_blank" rel="noopener">Consulter le taux actuel sur XE.com ↗</a></div>
+  <div class="note">Taux moyen du marché affiché par XE.com, donné à titre indicatif ; il diffère du taux appliqué par une banque ou un service de transfert. Dans ce prototype, le taux est relevé et saisi manuellement. Une synchronisation automatique nécessitera un abonnement à l’API XE (payante) ou une autre source autorisée.</div>
+  ${fx.history.length>1?`<div class="tbl-wrap"><table><thead><tr><th>Relevé le</th><th class="num">Taux</th><th>Par</th></tr></thead><tbody>${fx.history.slice().reverse().map(h=>`<tr><td>${esc(h.date)}</td><td class="num">${nfRate.format(h.rate)}</td><td>${esc(h.by)}</td></tr>`).join('')}</tbody></table></div>`:''}
+ </div></section>`}
+
+/* ---------- Paramètres ---------- */
+function vParams(){
+ return `<section class="panel"><header><h2>Transporteurs maritimes</h2><button class="btn primary" data-act="newCarrier">+ Ajouter un transporteur</button></header>
+ <div class="tbl-wrap"><table><thead><tr><th>Transporteur</th><th>Mode de suivi</th><th>Modèle de lien</th><th>API</th><th>Conteneurs</th></tr></thead><tbody>
+ ${S.data.carriers.map(k=>`<tr><td><b>${esc(k.name)}</b></td><td>${esc(k.mode)}</td><td class="mono" style="font-size:12px">${esc(k.template||k.url||'—')}</td><td class="muted">${esc(k.api)}</td><td class="num">${S.data.containers.filter(c=>c.carrier===k.id).length}</td></tr>`).join('')}</tbody></table></div>
+ <div class="body note">« {ref} » est remplacé par le numéro de conteneur ou de connaissement. Les liens Maersk, MSC et Grimaldi sont réels ; les références de ce prototype ne le sont pas. Le lien Grimaldi passe par un service tiers (TrackingMCP), pas par le site officiel du transporteur. Sans modèle, le lien ouvre la page de suivi et l’agent ou le client y saisit la référence.</div></section>
+ ${fxPanel()}
+ <section class="panel"><header><h2>Utilisateurs internes ${fake}</h2></header><div class="tbl-wrap"><table><thead><tr><th>Nom</th><th>Rôle</th><th>E-mail</th><th>Double authentification</th></tr></thead><tbody>
+ ${S.data.users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.role)}</td><td class="mono">${esc(u.email)}</td><td>${u.mfa==='Activée'?'<span class="chip ok">Activée</span>':'<span class="chip warn">À configurer</span>'}</td></tr>`).join('')}</tbody></table></div></section>
+ <section class="panel"><header><h2>Données de démonstration</h2></header><div class="body row" style="justify-content:space-between"><span class="muted">Vos modifications sont conservées dans ce navigateur uniquement. Réinitialiser restaure le jeu de données fictif d’origine.</span><button class="btn danger" data-act="reset">Réinitialiser la démo</button></div></section>`;
+}
+
+/* ---------- Portail client ---------- */
+function vPortail(){
+ const cl=client(S.clientView);const mine=S.data.dossiers.filter(x=>x.client===cl.id);
+ const notifs=S.data.notifs.filter(n=>n.client===cl.id).slice(0,6);
+ return `<div class="row" style="justify-content:space-between"><div><div class="muted" style="font-size:12px">Connecté en tant que</div><div style="font-size:18px;font-weight:600">${esc(cl.name)} ${fake}</div></div><span class="note">Vous ne voyez que vos propres dossiers (${mine.length}).</span></div>
+ ${mine.map(x=>{const t=totals(x);const c=x.container?cont(x.container):null;const docs=x.docs.filter(k=>k.client);const url=c?trackUrl(c):'';
+  return `<section class="panel"><div class="body portal-card">
+   <div class="vh"><h3>${x.v.year} ${esc(x.v.make)} ${esc(x.v.model)}</h3><span class="mono muted">${x.id} · VIN ${esc(x.v.vin||'à compléter')}</span></div>
+   <div class="stepper">${STAGES.map((s,i)=>`<div class="step ${i<x.stage?'done':i===x.stage?'cur':''}"><b>${s.label}</b><span>${i===x.stage?esc(x.status):''}</span></div>`).join('')}</div>
+   <div class="grid2"><div style="display:flex;flex-direction:column;gap:10px">
+     <dl class="dl"><dt>Montant total</dt><dd class="num" style="text-align:left">${money(t.cur)}${t.allReal?'':' <span class="muted">(dont estimations)</span>'}</dd><dt>Déjà payé</dt><dd>${money(t.paid)}</dd><dt>Reste à payer</dt><dd><b style="color:${t.bal>0?'var(--bad)':'var(--ok)'}">${money(Math.max(0,t.bal))}</b></dd><dt>Échéance</dt><dd>${fmtD(x.due)}${x.due&&t.bal>0&&daysTo(x.due)<0?' <span class="chip bad">dépassée</span>':''}</dd></dl>
+     <div><div class="muted" style="font-size:12px;margin-bottom:4px">Mes documents</div>${docs.length?docs.map(k=>`<div>${esc(k.type)} <span class="muted mono" style="font-size:11.5px">v${k.version} · ${fmtD(k.date)}</span></div>`).join(''):'<div class="empty">Aucun document disponible.</div>'}</div></div>
+    ${c?`<div class="track-box"><div class="row" style="justify-content:space-between"><b>Suivi maritime</b>${contStatusChip(c)}</div>
+     <dl class="dl"><dt>Transporteur</dt><dd>${esc(carrier(c.carrier).name)}</dd><dt>Conteneur</dt><dd class="mono">${c.id}</dd><dt>Bill of Lading</dt><dd class="mono">${esc(c.bl)}</dd><dt>Navire</dt><dd>${esc(c.vessel)} / ${esc(c.voyage)}</dd><dt>${c.ata?'Arrivé le':'Arrivée estimée'}</dt><dd><b>${fmtD(c.ata||c.eta)}</b>${c.ata?'':' (indicative)'}</dd><dt>Mis à jour le</dt><dd>${fmtD(c.lastCheck)}</dd></dl>
+     ${voyageBar(c)}
+     <div style="font-size:12.5px">${c.events.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3).map(e=>`<div><span class="muted">${fmtD(e.date)}</span> · ${esc(e.desc)}</div>`).join('')}</div>
+     ${url?`<a class="ext" href="${esc(url)}" target="_blank" rel="noopener">Voir sur le site ${esc(carrier(c.carrier).name)} ↗</a>${carrier(c.carrier).template?'':`<span class="muted" style="font-size:12px">Saisir la référence ${c.id} sur la page.</span>`}`:''}
+     <span class="note">Dates fournies par le transporteur, susceptibles de changer. Ce suivi n’est pas une localisation GPS en temps réel.</span></div>`:`<div class="track-box"><b>Suivi maritime</b><span class="muted">Le suivi apparaîtra dès que votre véhicule sera chargé dans un conteneur.</span></div>`}
+   </div></div></section>`}).join('')||'<div class="empty">Aucun dossier.</div>'}
+ <section class="panel"><header><h3>Mes notifications</h3></header>${notifs.length?`<div class="tbl-wrap"><table><tbody>${notifs.map(n=>`<tr><td>${fmtD(n.date)}</td><td>${esc(n.template)}</td><td class="mono">${n.dossier}</td><td>${esc(n.channel)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="body empty">Aucune notification.</div>'}</section>`;
+}
+
+const VIEW_FN={dash:vDash,dossiers:vDossiers,dossier:vDossier,conteneurs:vConteneurs,conteneur:vConteneur,finances:vFinances,documents:vDocuments,notifications:vNotifs,rapports:vRapports,audit:vAudit,parametres:vParams,portail:vPortail};
+
+/* ================= Modales ================= */
+const modal=document.getElementById('modal');
+function openModal(title,body,formId,submitLabel){
+ modal.innerHTML=`<form class="dialog" data-form="${formId}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2><button type="button" class="btn small" data-act="close" aria-label="Fermer">✕</button></header><div class="body">${body}</div><footer><button type="button" class="btn" data-act="close">Annuler</button>${submitLabel?`<button type="submit" class="btn primary">${esc(submitLabel)}</button>`:''}</footer></form>`;
+ modal.hidden=false;const f=modal.querySelector('input,select,textarea');if(f)f.focus();
+}
+function closeModal(){modal.hidden=true;modal.innerHTML=''}
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal()});
+function toast(msg){const t=document.getElementById('toast');const el=document.createElement('div');el.textContent=msg;while(t.children.length>=3)t.firstChild.remove();t.appendChild(el);setTimeout(()=>el.remove(),3200)}
+const F=(id,label,input,full)=>`<label class="f ${full?'full':''}" for="${id}"><span>${label}</span>${input}</label>`;
+let ctx={};
+
+/* ================= Actions ================= */
+const A={
+ go:ds=>{S.view=ds.v;S.sel=null;render();window.scrollTo(0,0)},
+ open:ds=>{S.view='dossier';S.sel=ds.id;render();window.scrollTo(0,0)},
+ openC:ds=>{if(S.role==='compta')return;S.view='conteneur';S.sel=ds.id;render();window.scrollTo(0,0)},
+ close:closeModal,
+ advance:ds=>{const x=dossier(ds.id);const req=requirements(x);const miss=req.filter(r=>!r[1]);if(!miss.length)return advance(x);ctx={id:x.id};
+  openModal('Conditions non remplies',`<p style="margin:0">Pour passer à « ${STAGES[x.stage+1].label} », il manque :</p><ul class="req">${miss.map(m=>`<li><span class="ic ko">✕</span>${esc(m[0])}</li>`).join('')}</ul>
+   ${R().force?F('reason','Motif de la validation administrateur (journalisé)','<textarea id="reason" name="reason" rows="3" required placeholder="Ex. : accord écrit de la direction du …"></textarea>',1):'<div class="note">Seul un administrateur peut valider une exception.</div>'}`,'force',R().force?'Forcer le passage':null)},
+ newDossier:()=>{openModal('Nouveau dossier',`<div class="note warn">Saisie de démonstration : utilisez des données fictives.</div><div class="fg">
+  ${F('nd_client','Client',`<select id="nd_client" name="client">${S.data.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`)}
+  ${F('nd_platform','Plateforme','<select id="nd_platform" name="platform"><option>COPART</option><option>IAA</option></select>')}
+  ${F('nd_make','Marque','<input type="text" id="nd_make" name="make" required value="Toyota">')}
+  ${F('nd_model','Modèle','<input type="text" id="nd_model" name="model" required value="Corolla LE">')}
+  ${F('nd_year','Année','<input type="number" id="nd_year" name="year" min="1990" max="2027" value="2021" required>')}
+  ${F('nd_lot','N° de lot','<input type="text" id="nd_lot" name="lot" value="DEMO-L-">')}
+  ${F('nd_vin','VIN (17 caractères)','<input type="text" id="nd_vin" name="vin" maxlength="17" placeholder="Laisser vide si inconnu">',1)}
+  ${F('nd_cond','État déclaré','<input type="text" id="nd_cond" name="cond" value="À préciser">')}
+  </div><div class="f full"><span style="font-weight:600;color:var(--fg)">Coût estimatif d’acquisition (USD) — saisi par l’agent</span></div><div class="fg">
+  ${F('nd_bid','Enchère','<input type="number" id="nd_bid" name="c0" min="0" step="1" required placeholder="0">')}
+  ${F('nd_fee','Frais acheteur plateforme','<input type="number" id="nd_fee" name="c1" min="0" step="1" required placeholder="0">')}
+  ${F('nd_tax','Taxes et frais plateforme','<input type="number" id="nd_tax" name="c2" min="0" step="1" required placeholder="0">')}
+  ${F('nd_other','Autres frais connus','<input type="number" id="nd_other" name="c3" min="0" step="1" value="0">')}
+  </div><div class="f full"><span style="font-weight:600;color:var(--fg)">Logistique et service (USD, estimations)</span></div><div class="fg">
+  ${F('nd_inland','Transport terrestre USA','<input type="number" id="nd_inland" name="c4" min="0" step="1" value="0">')}
+  ${F('nd_ocean','Fret maritime (quote-part)','<input type="number" id="nd_ocean" name="c5" min="0" step="1" value="0">')}
+  ${F('nd_svc','Frais de service USA CARS','<input type="number" id="nd_svc" name="c6" min="0" step="1" value="500">')}
+  ${F('nd_docs','Frais documentaires','<input type="number" id="nd_docs" name="c7" min="0" step="1" value="75">')}
+  </div><div class="note">Aucun montant n’est calculé automatiquement : chaque poste est saisi tel que connu (avis d’enchère, facture plateforme…). Il pourra être corrigé ensuite, avec historique.</div>`,'newDossier','Créer le dossier')},
+ editVehicle:ds=>{const x=dossier(ds.id);ctx={id:x.id};openModal('Compléter le véhicule',`<div class="fg">${F('ev_vin','VIN (17 caractères)',`<input type="text" id="ev_vin" name="vin" maxlength="17" minlength="17" required value="${esc(x.v.vin||'DEMOVIN2026A00'+x.id.slice(-3))}">`,1)}${F('ev_lot','N° de lot',`<input type="text" id="ev_lot" name="lot" value="${esc(x.v.lot)}">`)}${F('ev_cond','État déclaré',`<input type="text" id="ev_cond" name="cond" value="${esc(x.v.cond)}">`)}</div>`,'editVehicle','Enregistrer')},
+ addDoc:ds=>{const x=dossier(ds.id);ctx={id:x.id};const missing=DOC_TYPES.find(t=>!hasDoc(x,t))||DOC_TYPES[0];openModal('Ajouter un document',`<div class="fg">${F('ad_type','Type',`<select id="ad_type" name="type">${DOC_TYPES.map(t=>`<option ${t===missing?'selected':''}>${esc(t)}</option>`).join('')}</select>`,1)}${F('ad_file','Fichier (non stocké dans le prototype)','<input type="file" id="ad_file" name="file">',1)}</div><label class="check" for="ad_client"><input type="checkbox" id="ad_client" name="client" checked> Visible par le client</label>`,'addDoc','Ajouter')},
+ addNote:ds=>{ctx={id:ds.id};openModal('Note interne',F('an_text','Note','<textarea id="an_text" name="text" rows="4" required></textarea>',1),'addNote','Enregistrer')},
+ addPay:ds=>{const x=dossier(ds.id);ctx={id:x.id};const t=totals(x);openModal('Enregistrer un paiement · '+x.id,`<div class="note">Solde actuel : <b>${money(Math.max(0,t.bal))}</b>. Les paiements partiels sont acceptés.</div><div class="fg">
+  ${F('ap_amount','Montant (USD)',`<input type="number" id="ap_amount" name="amount" min="1" step="1" required value="${Math.max(1,Math.round(t.bal))}">`)}
+  ${F('ap_date','Date',`<input type="date" id="ap_date" name="date" value="${todayISO()}" required>`)}
+  ${F('ap_mode','Mode','<select id="ap_mode" name="mode"><option>Virement</option><option>Wave</option><option>Orange Money</option><option>Espèces</option><option>Chèque</option></select>')}
+  ${F('ap_ref','Référence',`<input type="text" id="ap_ref" name="ref" required value="DEMO-${x.id.slice(-4)}-${String(x.pays.length+1).padStart(2,'0')}">`)}
+  ${F('ap_proof','Justificatif','<input type="file" id="ap_proof" name="proof">',1)}</div>`,'addPay','Valider le paiement')},
+ editCost:ds=>{const x=dossier(ds.id);const k=x.costs[+ds.i];ctx={id:x.id,i:+ds.i};openModal('Coût · '+k.t,`<div class="note">L’historique des ajustements est conservé. Laisser « réel » vide tant que le montant n’est pas confirmé.</div><div class="fg">${F('ec_est','Montant estimé (USD)',`<input type="number" id="ec_est" name="est" min="0" step="1" required value="${k.est}">`)}${F('ec_val','Montant réel (USD)',`<input type="number" id="ec_val" name="val" min="0" step="1" value="${k.real??''}">`)}${F('ec_proof','Justificatif','<input type="file" id="ec_proof" name="proof">',1)}</div>`,'editCost','Enregistrer')},
+ assoc:ds=>{const x=dossier(ds.id);const v=document.getElementById('assocSel').value;if(!v)return toast('Choisissez un conteneur');const old=x.container;x.container=v;touch(x,'Associé au conteneur '+v);log('Véhicule associé au conteneur',x.id,(old||'—')+' → '+v);save();render();toast('Véhicule associé à '+v)},
+ newCont:()=>{openModal('Nouveau conteneur',`<div class="fg">
+  ${F('nc_carrier','Transporteur',`<select id="nc_carrier" name="carrier">${S.data.carriers.map(k=>`<option value="${k.id}">${esc(k.name)}</option>`).join('')}</select>`)}
+  ${F('nc_id','N° de conteneur (4 lettres + 7 chiffres)','<input type="text" id="nc_id" name="id" required pattern="[A-Za-z]{4}[0-9]{7}" value="DEMU" maxlength="11">')}
+  ${F('nc_bl','Bill of Lading','<input type="text" id="nc_bl" name="bl" value="DEMO-BL-">')}
+  ${F('nc_vessel','Navire','<input type="text" id="nc_vessel" name="vessel" value="DEMO ">')}
+  ${F('nc_voy','Voyage','<input type="text" id="nc_voy" name="voyage">')}
+  ${F('nc_pol','Port de chargement','<select id="nc_pol" name="pol"><option>Baltimore (USBAL)</option><option>Savannah (USSAV)</option><option>Newark (USEWR)</option><option>Houston (USHOU)</option></select>')}
+  ${F('nc_etd','Départ prévu',`<input type="date" id="nc_etd" name="etd" required value="${d(10)}">`)}
+  ${F('nc_eta','ETA Dakar',`<input type="date" id="nc_eta" name="eta" required value="${d(32)}">`)}</div>`,'newCont','Créer')},
+ eta:ds=>{const c=cont(ds.id);ctx={id:c.id};openModal('Mettre à jour l’ETA',`<div class="fg">${F('et_val','Nouvelle ETA',`<input type="date" id="et_val" name="eta" required value="${c.eta}">`)}${F('et_src','Source','<select id="et_src" name="source"><option>Saisie manuelle (site transporteur)</option><option>Saisie manuelle (e-mail transporteur)</option></select>')}</div><label class="check" for="et_notify"><input type="checkbox" id="et_notify" name="notify" checked> Notifier les clients concernés (simulé)</label>`,'eta','Enregistrer')},
+ addEvt:ds=>{ctx={id:ds.id};openModal('Ajouter un événement',`<div class="fg">${F('ae_date','Date',`<input type="date" id="ae_date" name="date" required value="${todayISO()}">`)}${F('ae_loc','Lieu','<input type="text" id="ae_loc" name="loc" required>')}${F('ae_desc','Événement','<input type="text" id="ae_desc" name="desc" required placeholder="Ex. : escale, transbordement…">',1)}</div>`,'addEvt','Ajouter')},
+ depart:ds=>{const c=cont(ds.id);c.atd=todayISO();c.status='En transit';c.events.push({date:todayISO(),loc:c.pol,desc:'Départ du navire '+c.vessel+' / '+c.voyage,source:'Saisie manuelle'});log('Départ enregistré',c.id,'ATD '+c.atd);S.data.dossiers.filter(x=>x.container===c.id).forEach(x=>{if(x.stage===4)x.status='En transit';notify(x,'Départ du navire')});save();render();toast('Départ enregistré · notifications clients simulées')},
+ ata:ds=>{const c=cont(ds.id);ctx={id:c.id};openModal('Arrivée réelle à Dakar',`${F('at_date','Date d’arrivée réelle (ATA)',`<input type="date" id="at_date" name="ata" required value="${todayISO()}">`,1)}<div class="note">Les véhicules du conteneur passeront au statut « Arrivé ». Le passage à l’étape Dakar reste une action de l’agent.</div>`,'ata','Confirmer l’arrivée')},
+ apiSim:ds=>{const c=cont(ds.id);const ev={date:todayISO(),loc:c.ata?c.pod:(c.ts?c.ts.split(' →')[0]:c.pol),desc:c.ata?'Conteneur disponible à l’enlèvement':'Position du voyage confirmée par le transporteur',source:'API (simulée)'};c.events.push(ev);c.lastCheck=todayISO();log('Synchronisation API simulée',c.id,'1 événement reçu');save();render();toast('Événement reçu (API simulée — aucune connexion réelle)')},
+ checked:ds=>{const c=cont(ds.id);c.lastCheck=todayISO();log('Suivi vérifié',c.id,'Vérification manuelle sur le site transporteur');save();render();toast('Date de vérification mise à jour')},
+ toggleDoc:ds=>{const x=dossier(ds.id);const k=x.docs.find(z=>z.id===ds.d);k.client=!k.client;log('Droit d’accès document modifié',x.id,k.type+' → '+(k.client?'visible client':'interne'));save();render()},
+ resend:ds=>{const n=S.data.notifs.find(z=>z.id===ds.id);n.attempts++;n.status='Simulée';n.error='';log('Notification renvoyée',n.dossier,n.template+' · tentative '+n.attempts);save();render();toast('Renvoi simulé')},
+ runReminders:()=>{let k=0;S.data.dossiers.filter(isActive).forEach(x=>{const t=totals(x);if(x.due&&t.bal>0&&daysTo(x.due)<=7){notify(x,daysTo(x.due)<0?'Échéance dépassée':'Rappel d’échéance (J'+(daysTo(x.due)>=0?'-':'+')+Math.abs(daysTo(x.due))+')');log('Rappel d’échéance déclenché',x.id,'Solde '+money(t.bal)+' · échéance '+x.due);k++}});save();render();toast(k+' rappel(s) générés (simulés)')},
+ csv:ds=>{const r=R();const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';let rows=[];
+  if(ds.k==='dossiers')rows=[['Référence','Client','Véhicule','VIN','Étape','Statut','Conteneur','Total USD','Payé USD','Solde USD','Échéance']].concat(S.data.dossiers.map(x=>{const t=totals(x);return[x.id,client(x.client).name,x.v.year+' '+x.v.make+' '+x.v.model,x.v.vin,STAGES[x.stage].label,x.status,x.container||'',t.cur,t.paid,t.bal,x.due||'']}));
+  if(ds.k==='paiements')rows=[['Date','Dossier','Client','Mode','Référence','Montant USD','Validé par']].concat(S.data.dossiers.flatMap(x=>x.pays.map(p=>[p.date,x.id,client(x.client).name,p.mode,p.ref,p.amount,p.validator])));
+  if(ds.k==='creances')rows=[['Dossier','Client','Solde USD','Échéance','Jours restants']].concat(S.data.dossiers.filter(x=>totals(x).bal>0).map(x=>[x.id,client(x.client).name,totals(x).bal,x.due||'',x.due?daysTo(x.due):'']));
+  if(ds.k==='conteneurs')rows=[['Conteneur','Transporteur','B/L','Navire','Voyage','POL','POD','ETD','ATD','ETA','ATA','Dernière vérification']].concat(S.data.containers.map(c=>[c.id,carrier(c.carrier).name,c.bl,c.vessel,c.voyage,c.pol,c.pod,c.etd,c.atd||'',c.eta,c.ata||'',c.lastCheck]));
+  const txt='# DONNÉES FICTIVES — prototype USA CARS\n'+rows.map(r=>r.map(q).join(';')).join('\n');
+  log('Export CSV',ds.k,rows.length-1+' lignes · rôle '+r.label);save();
+  openModal('Export CSV · '+ds.k,`<div class="note">Copiez ce contenu dans un fichier .csv (séparateur « ; », ouvrable dans Excel). En production, l’export sera un téléchargement direct.</div><textarea id="csvOut" rows="12" readonly class="mono" style="font-size:12px">${esc(txt)}</textarea><div><button type="button" class="btn" data-act="copyCsv">Copier</button></div>`,'noop',null)},
+ copyCsv:()=>{const ta=document.getElementById('csvOut');const ok=()=>toast('Copié');navigator.clipboard?navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.select();toast('Sélectionné — Ctrl/Cmd+C pour copier')}):(ta.select())},
+ newCarrier:()=>openModal('Ajouter un transporteur',`<div class="fg">${F('ca_name','Nom','<input type="text" id="ca_name" name="name" required>')}${F('ca_url','Page de suivi officielle','<input type="text" id="ca_url" name="url" placeholder="https://…">')}${F('ca_tpl','Modèle de lien (optionnel)','<input type="text" id="ca_tpl" name="template" placeholder="https://…/{ref}">',1)}</div>`,'newCarrier','Ajouter'),
+ fx:()=>openModal('Mettre à jour le taux USD → FCFA',`<div class="note">Ouvrez <a class="ext" href="${XE_URL}" target="_blank" rel="noopener">XE.com ↗</a>, puis reportez le taux affiché pour 1 USD.</div><div class="fg">${F('fx_rate','1 USD = … XOF',`<input type="number" id="fx_rate" name="rate" min="1" step="0.0001" required value="${S.data.fx.rate}">`)}${F('fx_date','Date et heure du relevé',`<input type="text" id="fx_date" name="date" required value="${nowStamp()} UTC">`)}</div>`,'fx','Enregistrer le taux'),
+ reset:()=>openModal('Réinitialiser la démo','<p style="margin:0">Toutes vos modifications seront effacées et le jeu de données fictif d’origine sera restauré.</p>','reset','Réinitialiser'),
+};
+const FORMS={
+ force:fd=>{const x=dossier(ctx.id);closeModal();advance(x,fd.get('reason'))},
+ newDossier:fd=>{const D=S.data;const n=D.seq++;const id='DEMO-2026-0'+n;const vin=(fd.get('vin')||'').trim().toUpperCase();
+  const c=COST_TYPES.map((t,i)=>({t,est:+fd.get('c'+i)||0,real:null,history:[]}));
+  const x={id,client:fd.get('client'),v:{make:fd.get('make'),model:fd.get('model'),year:+fd.get('year'),vin,lot:fd.get('lot'),platform:fd.get('platform'),cond:fd.get('cond'),color:'—'},stage:0,status:vin.length===17?'Nouveau':'Informations à compléter',owner:me(),created:todayISO(),purchased:null,updated:todayISO(),container:null,due:d(14),costs:c,pays:[],docs:[],notes:[],timeline:[{date:todayISO(),text:'Dossier ouvert',by:me()}]};
+  D.dossiers.push(x);log('Dossier créé',id,client(x.client).name+' · '+x.v.make+' '+x.v.model+' · acquisition saisie '+money(c.slice(0,ACQ_LINES).reduce((s,k)=>s+k.est,0))+' · total estimé '+money(c.reduce((s,k)=>s+k.est,0)));save();closeModal();S.view='dossier';S.sel=id;render();toast('Dossier '+id+' créé')},
+ editVehicle:fd=>{const x=dossier(ctx.id);const old=x.v.vin;x.v.vin=fd.get('vin').toUpperCase();x.v.lot=fd.get('lot');x.v.cond=fd.get('cond');if(x.status==='Informations à compléter')x.status='Validation requise';touch(x,'Informations véhicule complétées');log('Véhicule modifié',x.id,'VIN '+(old||'—')+' → '+x.v.vin);save();closeModal();render()},
+ addDoc:fd=>{const x=dossier(ctx.id);const type=fd.get('type');const f=fd.get('file');const ver=x.docs.filter(k=>k.type===type).length+1;const name=(f&&f.name)||type.toLowerCase().replace(/[^a-z0-9]+/g,'_')+(ver>1?'_v'+ver:'')+'.pdf';
+  x.docs.push({id:uid('D'),type,name,version:ver,date:todayISO(),client:fd.get('client')==='on'});touch(x,'Document ajouté : '+type+(ver>1?' (v'+ver+')':''));log('Document ajouté',x.id,type+' v'+ver+' · '+(fd.get('client')==='on'?'visible client':'interne'));save();closeModal();render();toast(type+' ajouté')},
+ addNote:fd=>{const x=dossier(ctx.id);x.notes.unshift({date:todayISO(),by:me(),text:fd.get('text')});x.updated=todayISO();log('Note ajoutée',x.id,'');save();closeModal();render()},
+ addPay:fd=>{const x=dossier(ctx.id);const amt=+fd.get('amount');const f=fd.get('proof');const p={id:uid('P'),amount:amt,date:fd.get('date'),mode:fd.get('mode'),ref:fd.get('ref'),validator:me(),proof:(f&&f.name)||'(aucun justificatif)'};x.pays.push(p);
+  if(!x.docs.some(k=>k.type==='Preuve de paiement'&&k.name===p.proof)&&f&&f.name)x.docs.push({id:uid('D'),type:'Preuve de paiement',name:f.name,version:1,date:todayISO(),client:true});
+  const t=totals(x);touch(x,'Paiement reçu : '+money(amt)+' ('+p.mode+')');if(x.stage===1&&x.status==='Paiement attendu'&&t.paid>=t.acq)x.status='Confirmé';if(x.stage===5&&x.status==='Solde attendu'&&t.bal<=0)x.status='Documents à finaliser';
+  log('Paiement enregistré',x.id,money(amt)+' · '+p.mode+' · '+p.ref+' · nouveau solde '+money(t.bal));notify(x,'Confirmation de paiement');save();closeModal();render();toast('Paiement enregistré · solde '+money(Math.max(0,t.bal)))},
+ editCost:fd=>{const x=dossier(ctx.id);const k=x.costs[ctx.i];const est=+fd.get('est');const rv=fd.get('val');const real=rv===''?null:+rv;const parts=[];
+  if(est!==k.est)parts.push('estimé '+money(k.est)+' → '+money(est));if(real!==k.real)parts.push('réel '+(k.real==null?'—':money(k.real))+' → '+(real==null?'—':money(real)));
+  if(!parts.length){closeModal();return}k.history.push({date:todayISO(),est:[k.est,est],real:[k.real,real],by:me()});k.est=est;k.real=real;touch(x);log('Coût modifié',x.id,k.t+' : '+parts.join(' ; '));save();closeModal();render()},
+ newCont:fd=>{const id=fd.get('id').toUpperCase();if(cont(id)){toast('Ce conteneur existe déjà');return}const c={id,carrier:fd.get('carrier'),bl:fd.get('bl'),vessel:fd.get('vessel'),voyage:fd.get('voyage'),pol:fd.get('pol'),pod:'Dakar (SNDKR)',ts:'',etd:fd.get('etd'),atd:null,eta:fd.get('eta'),ata:null,status:'Chargement planifié',lastCheck:todayISO(),notes:'',etaHistory:[{date:todayISO(),eta:fd.get('eta'),source:'Saisie manuelle',by:me()}],events:[{date:todayISO(),loc:fd.get('pol'),desc:'Conteneur créé dans le système',source:'Saisie manuelle'}]};
+  S.data.containers.push(c);log('Conteneur créé',id,carrier(c.carrier).name+' · '+c.vessel+' / '+c.voyage);save();closeModal();S.view='conteneur';S.sel=id;render()},
+ eta:fd=>{const c=cont(ctx.id);const old=c.eta;const n=fd.get('eta');if(n===old){closeModal();return}c.eta=n;c.lastCheck=todayISO();c.etaHistory.push({date:todayISO(),eta:n,source:fd.get('source'),by:me()});c.events.push({date:todayISO(),loc:'—',desc:'ETA révisée : '+fmtD(old)+' → '+fmtD(n),source:'Saisie manuelle'});log('ETA modifiée',c.id,old+' → '+n);
+  let k=0;if(fd.get('notify')==='on')S.data.dossiers.filter(x=>x.container===c.id).forEach(x=>{notify(x,'Changement d’ETA');touch(x,'ETA révisée au '+fmtD(n));k++});save();closeModal();render();toast('ETA mise à jour'+(k?' · '+k+' client(s) notifié(s) (simulé)':''))},
+ addEvt:fd=>{const c=cont(ctx.id);c.events.push({date:fd.get('date'),loc:fd.get('loc'),desc:fd.get('desc'),source:'Saisie manuelle'});c.lastCheck=todayISO();log('Événement ajouté',c.id,fd.get('desc'));save();closeModal();render()},
+ ata:fd=>{const c=cont(ctx.id);c.ata=fd.get('ata');c.status='Arrivé';c.lastCheck=todayISO();c.events.push({date:c.ata,loc:c.pod,desc:'Arrivée du navire (ATA)',source:'Saisie manuelle'});log('Arrivée réelle saisie',c.id,'ATA '+c.ata);
+  S.data.dossiers.filter(x=>x.container===c.id).forEach(x=>{if(x.stage===4){x.status='Arrivé';x.arrived=c.ata;touch(x,'Navire arrivé à Dakar')}notify(x,'Arrivée à Dakar','WhatsApp')});save();closeModal();render();toast('Arrivée enregistrée · clients notifiés (simulé)')},
+ newCarrier:fd=>{const name=fd.get('name').trim();S.data.carriers.push({id:uid('k'),name,url:fd.get('url'),template:fd.get('template'),mode:'Lien officiel',api:'Non étudiée'});log('Transporteur ajouté',name,fd.get('url')||'');save();closeModal();render()},
+ reset:()=>{try{localStorage.removeItem(STORE_KEY)}catch(e){}S.data=seed();S.view='dash';closeModal();render();toast('Démo réinitialisée')},
+ fx:fd=>{const fx=S.data.fx;const old=fx.rate;fx.rate=+fd.get('rate');fx.date=fd.get('date');fx.by=me();fx.source='XE.com — taux moyen du marché';fx.history.push({rate:fx.rate,date:fx.date,by:fx.by});log('Taux de change mis à jour','USD/XOF',nfRate.format(old)+' → '+nfRate.format(fx.rate)+' · source XE.com');save();closeModal();render();toast('Taux enregistré : 1 USD = '+nfRate.format(fx.rate)+' XOF')},
+ noop:()=>closeModal(),
+};
+
+/* ================= Événements ================= */
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.tagName==='A')return;const fn=A[el.dataset.act];if(fn){e.preventDefault();fn(el.dataset,el)}});
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;const fn=FORMS[f.dataset.form];if(fn)fn(new FormData(f),f)});
+document.addEventListener('change',e=>{const el=e.target;const k=el.dataset.chg;if(!k)return;
+ if(k==='role'){S.role=el.value;S.view=ROLES[S.role].views[0];S.sel=null;save();render();toast('Vue : '+ROLES[S.role].label)}
+ else if(k==='client'){S.clientView=el.value;save();render()}
+ else if(k==='cur'){S.cur=el.value;save();render()}
+ else if(k==='stageF'){S.stageF=el.value;document.getElementById('dlist').innerHTML=dossierRows()}
+ else if(k==='finF'||k==='docF'){S[k]=el.value;render()}
+ else if(k==='status'){const x=dossier(el.dataset.id);const old=x.status;x.status=el.value;touch(x,'Statut : '+old+' → '+x.status);log('Statut modifié',x.id,old+' → '+x.status);save();render();toast('Statut mis à jour')}
+});
+document.addEventListener('input',e=>{const k=e.target.dataset.inp;if(!k)return;S[k]=e.target.value;if(k==='q')document.getElementById('dlist').innerHTML=dossierRows();if(k==='auditQ'){const tmp=document.createElement('div');tmp.innerHTML=vAudit();document.getElementById('auditList').innerHTML=tmp.querySelector('#auditList').innerHTML}});
+
+load();render();
+</script>

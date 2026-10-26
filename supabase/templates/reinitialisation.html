@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+  <body style="font-family: Arial, sans-serif; color: #1b1d21; line-height: 1.5">
+    <h2 style="color: #12355b">USA CARS — réinitialisation du mot de passe</h2>
+    <p>Bonjour,</p>
+    <p>Une demande de réinitialisation de mot de passe a été faite pour votre compte.</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/compte/mot-de-passe"
+        style="background: #12355b; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none"
+        >Choisir un nouveau mot de passe</a
+      >
+    </p>
+    <p>
+      Ce lien est à usage unique et expire rapidement. Si vous n’êtes pas à l’origine de cette demande, ignorez ce
+      message.
+    </p>
+    <p style="color: #5d636e; font-size: 12px">
+      USA CARS ne vous demandera jamais de mot de passe ni de coordonnées de paiement par e-mail ou par WhatsApp.
+    </p>
+  </body>
+</html>

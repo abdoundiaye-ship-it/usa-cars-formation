@@ -1,0 +1,570 @@
+{
+  "_description": "Paramètres contractuels initiaux (contrat de prestation révisé, cahier des charges v1.1 section 6). Chargés dans la table settings. status: confirme = valeur du contrat ; a_confirmer = valeur provisoire surlignée dans le contrat ou hypothèse par défaut.",
+  "_version": "2026-10-19 (décisions A4, B3 ; identité légale de USA CARS ajoutée en phase 2)",
+  "settings": [
+    {
+      "key": "currency.reference",
+      "value": "USD",
+      "type": "string",
+      "status": "confirme",
+      "source": "Contrat art. 8"
+    },
+    {
+      "key": "fx.source",
+      "value": "XE.com — taux moyen du marché",
+      "type": "string",
+      "status": "confirme",
+      "source": "Contrat art. 8"
+    },
+    {
+      "key": "fx.capture_moment",
+      "value": "quote_issue_date_refresh_at_payment",
+      "type": "enum:quote_issue_date_refresh_at_payment",
+      "status": "confirme",
+      "source": "Décision C4 du 17/10/2026 (contrat art. 8 à aligner)"
+    },
+    {
+      "key": "fx.markup_percent",
+      "value": 0,
+      "type": "number",
+      "status": "confirme",
+      "source": "Décision C4 — interprétation I1 confirmée le 17/10/2026 (pas de majoration)"
+    },
+    {
+      "key": "fx.rounding_xof",
+      "value": 1,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Décision C4 — arrondi au FCFA entier le plus proche"
+    },
+    {
+      "key": "fx.initial_rate",
+      "value": 586.52,
+      "type": "number",
+      "status": "confirme",
+      "source": "XE.com, 13/10/2026 10:10 UTC (valeur de démonstration)"
+    },
+    {
+      "key": "quote.validity_hours",
+      "value": 48,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 7"
+    },
+    {
+      "key": "quote.margin_percent_default",
+      "value": null,
+      "type": "number",
+      "status": "a_confirmer",
+      "source": "Automatisation future des forfaits (décision C1)"
+    },
+    {
+      "key": "quote.rounding_usd",
+      "value": 10,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Automatisation future des forfaits (décision C1)"
+    },
+    {
+      "key": "vat.rate_percent",
+      "value": 0,
+      "type": "number",
+      "status": "a_confirmer",
+      "source": "Décision C3 — à confirmer plus tard avec l’expert-comptable"
+    },
+    {
+      "key": "deposit.amount_usd",
+      "value": null,
+      "type": "money",
+      "status": "a_confirmer",
+      "source": "Remplacé par deposit.amount_basis"
+    },
+    {
+      "key": "deposit.refund_business_days",
+      "value": 5,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 6"
+    },
+    {
+      "key": "payment1.due_hours_after_win",
+      "value": 24,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 9.1"
+    },
+    {
+      "key": "balance.due_hours_before_eta",
+      "value": 48,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 9.3"
+    },
+    {
+      "key": "balance.recommended_days_before_eta",
+      "value": 7,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 9.3"
+    },
+    {
+      "key": "balance.min_hours_after_eta_advance_notice",
+      "value": 48,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 9.3"
+    },
+    {
+      "key": "balance.reminder_days_before_due",
+      "value": [
+        7,
+        3,
+        2
+      ],
+      "type": "integer[]",
+      "status": "confirme",
+      "source": "Cahier des charges §6"
+    },
+    {
+      "key": "late_fee.amount_usd",
+      "value": 100,
+      "type": "money",
+      "status": "confirme",
+      "source": "Contrat art. 20"
+    },
+    {
+      "key": "late_fee.period_days",
+      "value": 14,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 20"
+    },
+    {
+      "key": "late_fee.cap_usd",
+      "value": null,
+      "type": "money",
+      "status": "a_confirmer",
+      "source": "Contrat art. 20"
+    },
+    {
+      "key": "late_fee.auto_apply",
+      "value": false,
+      "type": "boolean",
+      "status": "a_confirmer",
+      "source": "Clarification C5"
+    },
+    {
+      "key": "arrival.notify_within_hours",
+      "value": 24,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 17"
+    },
+    {
+      "key": "documents.release_business_hours",
+      "value": 48,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 15"
+    },
+    {
+      "key": "pickup.days_after_documents",
+      "value": 15,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 18"
+    },
+    {
+      "key": "claim.business_days_after_pickup",
+      "value": 3,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 19"
+    },
+    {
+      "key": "extra_costs.approval_threshold_usd",
+      "value": 250,
+      "type": "money",
+      "status": "a_confirmer",
+      "source": "Contrat art. 26"
+    },
+    {
+      "key": "extra_costs.approval_threshold_percent",
+      "value": 10,
+      "type": "number",
+      "status": "a_confirmer",
+      "source": "Contrat art. 26"
+    },
+    {
+      "key": "unclaimed.reminder_days_after_arrival",
+      "value": 30,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 22"
+    },
+    {
+      "key": "unclaimed.formal_notice_days_after_arrival",
+      "value": 60,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 22"
+    },
+    {
+      "key": "unclaimed.formal_notice_min_cure_days",
+      "value": 15,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 21"
+    },
+    {
+      "key": "unclaimed.procedure_months_after_arrival",
+      "value": 4,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Contrat art. 22"
+    },
+    {
+      "key": "import.max_age_years_passenger",
+      "value": 10,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 5 — décret signé le 24/10/2025, publication JO à vérifier"
+    },
+    {
+      "key": "import.max_age_years_light_utility",
+      "value": 10,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "idem (< 3,5 t)"
+    },
+    {
+      "key": "import.max_age_years_trucks_passenger_transport",
+      "value": 15,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "idem"
+    },
+    {
+      "key": "tracking.max_days_without_check_in_transit",
+      "value": 3,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Clarification F3"
+    },
+    {
+      "key": "data.retention_years",
+      "value": null,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Contrat art. 33 ; clarification G2"
+    },
+    {
+      "key": "templates.legal_validated",
+      "value": false,
+      "type": "boolean",
+      "status": "confirme",
+      "source": "Décision D1 — filigrane PROJET tant que faux"
+    },
+    {
+      "key": "fx.rounding_mode",
+      "value": "nearest",
+      "type": "enum:nearest",
+      "status": "confirme",
+      "source": "Décision C4"
+    },
+    {
+      "key": "payment1.amount_basis",
+      "value": "forfait_a_total",
+      "type": "enum:forfait_a_total",
+      "status": "confirme",
+      "source": "Décision C2"
+    },
+    {
+      "key": "deposit.amount_basis",
+      "value": "forfait_a_estimate_from_max_bid",
+      "type": "enum:forfait_a_estimate_from_max_bid",
+      "status": "confirme",
+      "source": "Décision C2 — interprétation I2 confirmée le 17/10/2026"
+    },
+    {
+      "key": "overpayment.handling",
+      "value": "refund_to_client",
+      "type": "enum:refund_to_client",
+      "status": "confirme",
+      "source": "Décision C6"
+    },
+    {
+      "key": "refund.business_days",
+      "value": 5,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Question C9"
+    },
+    {
+      "key": "quote.forfait_mode",
+      "value": "manual",
+      "type": "enum:manual|proposed_with_approval",
+      "status": "confirme",
+      "source": "Décision C1 — saisie manuelle par l’agent ; automatisation future avec approbation"
+    },
+    {
+      "key": "quote.require_approval",
+      "value": false,
+      "type": "boolean",
+      "status": "confirme",
+      "source": "Décision C1 — interprétation I4 (pas d’approbation obligatoire en phase actuelle)"
+    },
+    {
+      "key": "contract.scope",
+      "value": "per_vehicle",
+      "type": "enum:per_vehicle",
+      "status": "confirme",
+      "source": "Décision B1 — un contrat par véhicule"
+    },
+    {
+      "key": "acceptance.methods",
+      "value": [
+        "scanned_paper",
+        "whatsapp",
+        "portal"
+      ],
+      "type": "string[]",
+      "status": "confirme",
+      "source": "Décision D3"
+    },
+    {
+      "key": "client_auth.link_channels",
+      "value": [
+        "email",
+        "whatsapp"
+      ],
+      "type": "string[]",
+      "status": "confirme",
+      "source": "Décision E1 — technique à valider (interprétation I3)"
+    },
+    {
+      "key": "notifications.channels",
+      "value": [
+        "email",
+        "whatsapp"
+      ],
+      "type": "string[]",
+      "status": "confirme",
+      "source": "Décision E1/E3 — dès la première version"
+    },
+    {
+      "key": "numbering.dossier",
+      "value": "UC-{YYYY}-{####}",
+      "type": "string",
+      "status": "confirme",
+      "source": "Décision B3 du 17/10/2026"
+    },
+    {
+      "key": "numbering.quote",
+      "value": "DV-{YYYY}-{####}",
+      "type": "string",
+      "status": "confirme",
+      "source": "Décision B3 du 17/10/2026"
+    },
+    {
+      "key": "numbering.deposit_invoice",
+      "value": "FA-{YYYY}-{####}",
+      "type": "string",
+      "status": "confirme",
+      "source": "Décision B3 du 17/10/2026"
+    },
+    {
+      "key": "numbering.balance_invoice",
+      "value": "FS-{YYYY}-{####}",
+      "type": "string",
+      "status": "confirme",
+      "source": "Décision B3 du 17/10/2026"
+    },
+    {
+      "key": "numbering.cash_receipt",
+      "value": "RC-{YYYY}-{####}",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Question C7 (hypothèse par défaut)"
+    },
+    {
+      "key": "numbering.refund_note",
+      "value": "RB-{YYYY}-{####}",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Question C7 (hypothèse par défaut)"
+    },
+    {
+      "key": "numbering.reset",
+      "value": "annual",
+      "type": "enum:annual",
+      "status": "confirme",
+      "source": "Décision B3 du 17/10/2026"
+    },
+    {
+      "key": "auth.mfa_required_roles",
+      "value": [
+        "admin",
+        "accounting"
+      ],
+      "type": "string[]",
+      "status": "confirme",
+      "source": "Décision A4 du 17/10/2026"
+    },
+    {
+      "key": "company.legal_form",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.rccm",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.ninea",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.office_address",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.phone",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.email",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.representative_name",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "company.representative_title",
+      "value": "À compléter",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Contrat, en-tête « USA CARS » — à saisir par l’administrateur (phase 2)",
+      "lot": "phase2"
+    },
+    {
+      "key": "dashboard.stale_dossier_days",
+      "value": 7,
+      "type": "integer",
+      "status": "confirme",
+      "source": "Cahier des écrans — tableau de bord : « dossier sans mise à jour > 7 j » (docs/14)",
+      "lot": "phase2d"
+    },
+    {
+      "key": "dashboard.recent_eta_change_days",
+      "value": 3,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Hypothèse de Claude Code (lot 2d) : une ETA modifiée reste signalée pendant ce nombre de jours",
+      "lot": "phase2d"
+    },
+    {
+      "key": "client_auth.link_ttl_minutes",
+      "value": 15,
+      "type": "integer",
+      "status": "confirme",
+      "source": "R16 et US-4.1 : lien ou code à usage unique, expiration 15 minutes",
+      "lot": "phase4a"
+    },
+    {
+      "key": "client_auth.max_links_per_hour",
+      "value": 5,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Hypothèse phase 4 : limite anti-abus des demandes de lien de connexion par compte client",
+      "lot": "phase4a"
+    },
+    {
+      "key": "numbering.reminder_letter",
+      "value": "LR-{YYYY}-{####}",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Hypothèse phase 5 : numérotation des lettres de relance (contrat art. 22)",
+      "lot": "phase5"
+    },
+    {
+      "key": "numbering.formal_notice",
+      "value": "MD-{YYYY}-{####}",
+      "type": "string",
+      "status": "a_confirmer",
+      "source": "Hypothèse phase 5 : numérotation des mises en demeure (contrat art. 21)",
+      "lot": "phase5"
+    },
+    {
+      "key": "data.retention_years_accounting",
+      "value": 10,
+      "type": "integer",
+      "status": "a_confirmer",
+      "source": "Décision G2-a du 21/10/2026 (valeur par défaut) : pièces comptables, contrat art. 33",
+      "lot": "phase6"
+    },
+    {
+      "key": "data.privacy_notice_validated",
+      "value": false,
+      "type": "boolean",
+      "status": "confirme",
+      "source": "Décision G1-a du 21/10/2026 : page « Confidentialité » marquée PROJET tant que faux",
+      "lot": "phase6"
+    }
+  ],
+  "carriers": [
+    {
+      "code": "maersk",
+      "name": "Maersk",
+      "tracking_url": "https://www.maersk.com/tracking/",
+      "url_template": "https://www.maersk.com/tracking/{ref}",
+      "link_type": "officiel",
+      "api_status": "non_verifie"
+    },
+    {
+      "code": "msc",
+      "name": "MSC",
+      "tracking_url": "https://www.msc.com/fr/track-a-shipment",
+      "url_template": null,
+      "link_type": "officiel",
+      "api_status": "non_etudie"
+    },
+    {
+      "code": "grimaldi",
+      "name": "Grimaldi",
+      "tracking_url": "https://trackingmcp.com/track/grimaldi",
+      "url_template": null,
+      "link_type": "tiers",
+      "api_status": "non_etudie",
+      "note": "Service tiers TrackingMCP — remplacer par le lien officiel dès qu'il est connu (clarification F1)."
+    }
+  ]
+}
