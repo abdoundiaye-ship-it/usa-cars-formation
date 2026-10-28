@@ -37,6 +37,14 @@ test("agent : client, dossier, contrat généré puis accepté par scan", async 
 
   // US-2.2 — ouverture du dossier : référence UC-AAAA-#### et contrat généré
   await page.getByRole("link", { name: "Ouvrir un dossier" }).click();
+  // Choix du client : nom et téléphone affichés en entier, client de la fiche présélectionné, recherche par numéro.
+  const clientChoice = page.getByRole("radio", { name });
+  await expect(clientChoice).toBeChecked();
+  await page.getByLabel("Rechercher un client").fill("77 000 00 99");
+  await expect(clientChoice).toBeVisible();
+  await page.getByLabel("Rechercher un client").fill("aucun client zzz");
+  await expect(page.getByText("Aucun client ne correspond")).toBeVisible();
+  await page.getByLabel("Rechercher un client").fill("");
   await page.getByLabel("Plateforme").selectOption("copart");
   await page.getByLabel("VIN / châssis").fill("1demxxx0000000099");
   await page.getByLabel("Marque").fill("Toyota");

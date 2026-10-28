@@ -51,7 +51,7 @@ export default async function InternalLayout({ children }: { children: React.Rea
       user={{ fullName: access.fullName, roleLabel: ROLE_LABELS[access.role] }}
       canCreateDossier={can("operationsWrite")}
       signOut={signOut}
-      footer={<BrandFooter />}
+      footer={<BrandFooter className="text-sidebar-muted text-[10px] leading-snug" />}
     >
       {children}
     </AppShell>

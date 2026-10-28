@@ -13,6 +13,7 @@ import {
 import type { FormState } from "@/lib/forms";
 import type { DossierRow } from "@/lib/supabase/database.types";
 import { useFormAction } from "@/lib/use-form-action";
+import { cn } from "@/lib/utils";
 import { createDossier, duplicateDossier, recordAcceptance, regenerateContract, updateVehicle } from "./actions";
 
 type Values = (name: string, saved: string | number | null | undefined) => string;
@@ -118,23 +119,77 @@ export interface ClientOption {
 }
 
 /** Ouverture d'un dossier : client + véhicule (tout est complétable plus tard, sauf le client). */
+/**
+ * Choix du client : liste affichée dans la page (pas de liste déroulante native, dont la fenêtre est placée par le
+ * navigateur et pouvait masquer le début du nom). Nom et téléphone complets, recherche par nom ou numéro.
+ */
+function ClientPicker({ clients, defaultId, error }: { clients: ClientOption[]; defaultId: string; error?: string }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const digits = q.replace(/\D/g, "");
+  const matches = (c: ClientOption) =>
+    !q || c.name.toLowerCase().includes(q) || (digits !== "" && c.notify_phone.replace(/\D/g, "").includes(digits));
+  const visible = clients.filter(matches).length;
+  return (
+    <fieldset className="flex flex-col gap-1.5" aria-describedby={error ? "clientId-erreur" : undefined}>
+      <legend className="mb-1.5 text-sm font-medium">Client</legend>
+      <label htmlFor="client-recherche" className="sr-only">
+        Rechercher un client
+      </label>
+      <Input
+        id="client-recherche"
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Rechercher par nom ou téléphone…"
+        autoComplete="off"
+      />
+      {/* La clé recrée la liste quand la valeur par défaut change (même raison que pour Select). */}
+      <ul
+        key={defaultId}
+        className={cn("border-border bg-card max-h-72 overflow-y-auto rounded-lg border p-1", error && "border-danger")}
+      >
+        {clients.map((c) => (
+          // Les clients filtrés restent dans la page (masqués) : un client déjà choisi reste envoyé avec le formulaire.
+          <li key={c.id} hidden={!matches(c)}>
+            <label className="has-[:checked]:bg-primary/10 has-[:checked]:ring-primary hover:bg-background has-[:focus-visible]:outline-primary flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-3 py-2 has-[:checked]:ring-1 has-[:focus-visible]:outline-2">
+              <input
+                type="radio"
+                name="clientId"
+                value={c.id}
+                defaultChecked={c.id === defaultId}
+                className="accent-primary mt-1 size-4 shrink-0"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium break-words">{c.name}</span>
+                <span className="text-muted block text-xs tabular-nums">{c.notify_phone}</span>
+              </span>
+            </label>
+          </li>
+        ))}
+        {visible === 0 && (
+          <li className="text-muted px-3 py-2 text-sm">Aucun client ne correspond à « {query.trim()} ».</li>
+        )}
+      </ul>
+      {error && (
+        <p id="clientId-erreur" className="text-danger text-xs">
+          {error}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
 export function NewDossierForm({ clients, clientId }: { clients: ClientOption[]; clientId?: string }) {
   const { state, pending, formProps } = useFormAction(createDossier);
   return (
     <form {...formProps} className="flex flex-col gap-6" noValidate>
       <FormMessage state={state} />
-      <Field id="clientId" label="Client" error={state.fieldErrors?.clientId}>
-        {(aria) => (
-          <Select {...aria} name="clientId" defaultValue={state.data?.clientId ?? clientId ?? ""} required>
-            <option value="">— Choisir un client —</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} · {c.notify_phone}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
+      <ClientPicker
+        clients={clients}
+        defaultId={state.data?.clientId ?? clientId ?? ""}
+        error={state.fieldErrors?.clientId}
+      />
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 font-semibold">Véhicule</legend>
         <p className="text-muted text-sm">

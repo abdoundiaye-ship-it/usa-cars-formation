@@ -63,7 +63,7 @@ interface AppShellProps {
   /** Bouton « Nouveau dossier » (rôles autorisés à créer un dossier). */
   canCreateDossier: boolean;
   signOut: () => Promise<void>;
-  /** Mention de copyright, rendue côté serveur et passée en prop. */
+  /** Mention de copyright, rendue côté serveur et passée en prop ; affichée en bas du menu latéral. */
   footer: React.ReactNode;
   children: React.ReactNode;
 }
@@ -189,6 +189,8 @@ export function AppShell({ groups, user, canCreateDossier, signOut, footer, chil
             </button>
           </form>
         </div>
+
+        <footer className="px-1 pt-1">{footer}</footer>
       </aside>
 
       {/* Voile du tiroir : un clic ferme le menu (au clavier : Échap ou le bouton « Fermer le menu »). */}
@@ -246,7 +248,6 @@ export function AppShell({ groups, user, canCreateDossier, signOut, footer, chil
           )}
         </header>
         <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
-        <footer className="border-border border-t px-4 py-6 lg:px-8">{footer}</footer>
       </div>
     </div>
   );
